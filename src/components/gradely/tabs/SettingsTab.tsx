@@ -65,7 +65,7 @@ export function SettingsTab({ course }: { course: Course }) {
     setSaving(true);
     const { error } = await supabase
       .from("courses")
-      .update({ ...meta, settings: s as unknown as Record<string, unknown> })
+      .update({ ...meta, settings: JSON.parse(JSON.stringify(s)) })
       .eq("id", course.id);
     setSaving(false);
     if (error) {
