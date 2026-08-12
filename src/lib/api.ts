@@ -19,7 +19,7 @@ export function friendlyError(error: unknown): string {
 }
 
 const mapCourse = (row: Record<string, unknown>): Course =>
-  ({ ...row, settings: withDefaults(row.settings) }) as Course;
+  ({ ...row, settings: withDefaults(row['settings']) }) as Course;
 
 export async function listCourses(): Promise<Course[]> {
   const { data, error } = await supabase

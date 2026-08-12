@@ -11,7 +11,7 @@ export async function readWorkbook(file: File): Promise<{
   return {
     sheetNames: wb.SheetNames,
     read: (sheet: string) => {
-      const ws = wb.Sheets[sheet];
+      const ws = wb.Sheets[sheet]!;
       const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false });
       // find the header row: first row with >= 2 non-empty string cells
       let headerIndex = 0;
