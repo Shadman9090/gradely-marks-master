@@ -195,7 +195,10 @@ export function MarksGrid({
 
   async function removeAssessment(a: Assessment) {
     const { error } = await supabase.from("assessments").delete().eq("id", a.id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) {
+      toast.error(friendlyError(error));
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: courseKeys.assessments(course.id) });
     queryClient.invalidateQueries({ queryKey: courseKeys.marks(course.id) });
     toast.success(`${a.name} deleted.`);
@@ -436,9 +439,20 @@ function AssessmentDialog({
           </Button>
           <Button
             onClick={() => {
-              if (!name.trim()) return toast.error("Please give the assessment a name.");
-              if (!(max > 0)) return toast.error("Maximum marks must be greater than zero.");
-              onSave({ id: assessment?.id, name: name.trim(), max_marks: max, assessed_on: date });
+              if (!name.trim()) {
+                toast.error("Please give the assessment a name.");
+                return;
+              }
+              if (!(max > 0)) {
+                toast.error("Maximum marks must be greater than zero.");
+                return;
+              }
+              onSave({
+                ...(assessment ? { id: assessment.id } : {}),
+                name: name.trim(),
+                max_marks: max,
+                assessed_on: date,
+              });
             }}
           >
             Save

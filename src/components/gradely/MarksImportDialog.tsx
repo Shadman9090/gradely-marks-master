@@ -157,7 +157,10 @@ export function MarksImportDialog({
       .from("marks")
       .upsert(marks, { onConflict: "assessment_id,student_id" });
     setBusy(false);
-    if (error) return toast.error(friendlyError(error));
+    if (error) {
+      toast.error(friendlyError(error));
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: courseKeys.marks(course.id) });
     toast.success(`${marks.length} marks imported.`);
     reset();
