@@ -303,7 +303,14 @@ function StudentImportDialog({
   async function confirm() {
     const problems: string[] = [];
     const seen = new Set(existing.map((s) => s.roll.trim()));
-    const payload: Record<string, unknown>[] = [];
+    const payload: {
+      course_id: string;
+      roll: string;
+      name: string;
+      reg_no: string;
+      section: string;
+      position: number;
+    }[] = [];
     rows.forEach((row, i) => {
       const roll = String(row[map.roll] ?? "").trim();
       if (!roll) {
