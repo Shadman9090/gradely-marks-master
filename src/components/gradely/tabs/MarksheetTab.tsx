@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import { Printer } from "lucide-react";
-import type { StudentSummary } from "@/lib/calc";
-import { fmt } from "@/lib/calc";
+import type { MarkMap, StudentSummary } from "@/lib/calc";
+import { fmt, markKey } from "@/lib/calc";
 import type { Assessment, Course } from "@/lib/gradely-types";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "../EmptyState";
 
@@ -12,10 +11,12 @@ export function MarksheetTab({
   course,
   assessments,
   rows,
+  marks,
 }: {
   course: Course;
   assessments: Assessment[];
   rows: StudentSummary[];
+  marks: MarkMap;
 }) {
   const s = course.settings;
   const [showName, setShowName] = useState(s.showNameOnSheet);
@@ -122,11 +123,9 @@ export function MarksheetTab({
                   <Td className="font-mono">{r.student.roll}</Td>
                   {showName && <Td className="text-left">{r.student.name}</Td>}
                   {showComponents &&
-                    cts.map((c) => {
-                      const ratio = r.ct.ratios;
-                      void ratio;
-                      return <Td key={c.id}>{markCell(r, c)}</Td>;
-                    })}
+                    cts.map((c) => (
+                      <Td key={c.id}>{markCell(marks, r.student.id, c)}</Td>
+                    ))}
                   <Td>{fmt(r.ct.converted, s)}</Td>
                   {s.useAttendance && <Td>{fmt(r.attendanceMark, s)}</Td>}
                   {s.useAssignment && <Td>{fmt(r.assignment.converted, s)}</Td>}
@@ -155,8 +154,8 @@ export function MarksheetTab({
   );
 }
 
-function markCell(r: StudentSummary, c: Assessment) {
-  const m = r.rawMarks?.get(c.id);
+function markCell(marks: MarkMap, studentId: string, c: Assessment) {
+  const m = marks.get(markKey(c.id, studentId));
   if (!m) return "—";
   if (m.status === "absent") return "A";
   if (m.status === "na") return "NA";
@@ -189,4 +188,3 @@ function Td({ children, className = "" }: { children?: React.ReactNode; classNam
   );
 }
 
-export { Label };
