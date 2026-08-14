@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>
+                <DropdownMenuItem onClick={() => navigate({ to: "/dashboard" })}>
                   <UserRound className="mr-2 h-4 w-4" /> Teacher profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate({ to: "/dashboard" })}>

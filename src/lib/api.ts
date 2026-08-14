@@ -30,10 +30,10 @@ export async function listCourses(): Promise<Course[]> {
   return (data ?? []).map(mapCourse);
 }
 
-export async function getCourse(id: string): Promise<Course> {
-  const { data, error } = await supabase.from("courses").select("*").eq("id", id).single();
+export async function getCourse(id: string): Promise<Course | null> {
+  const { data, error } = await supabase.from("courses").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
-  return mapCourse(data);
+  return data ? mapCourse(data) : null;
 }
 
 export async function listStudents(courseId: string): Promise<Student[]> {
