@@ -12,7 +12,6 @@ import {
 } from "@/lib/api";
 import { markKey, summarise } from "@/lib/calc";
 import type { Attendance, Mark } from "@/lib/gradely-types";
-import { AppShell } from "@/components/gradely/AppShell";
 import { OverviewTab } from "@/components/gradely/tabs/OverviewTab";
 import { StudentsTab } from "@/components/gradely/tabs/StudentsTab";
 import { MarksGrid } from "@/components/gradely/tabs/MarksGrid";
@@ -54,7 +53,11 @@ function CourseWorkspace() {
   const { tab = "overview" } = Route.useSearch();
   const navigate = useNavigate();
 
-  const courseQ = useQuery({ queryKey: courseKeys.detail(courseId), queryFn: () => getCourse(courseId) });
+  const courseQ = useQuery({
+    queryKey: courseKeys.detail(courseId),
+    queryFn: () => getCourse(courseId),
+    retry: false,
+  });
   const studentsQ = useQuery({
     queryKey: courseKeys.students(courseId),
     queryFn: () => listStudents(courseId),
@@ -96,33 +99,28 @@ function CourseWorkspace() {
     navigate({ to: "/courses/$courseId", params: { courseId }, search: { tab: next } });
   }
 
-  if (courseQ.isLoading) {
+  if (courseQ.isLoading && !courseQ.isError) {
     return (
-      <AppShell>
-        <div className="space-y-3">
-          <div className="h-8 w-64 animate-pulse rounded bg-muted" />
-          <div className="h-40 animate-pulse rounded-lg bg-muted" />
-        </div>
-      </AppShell>
+      <div className="space-y-3">
+        <div className="h-8 w-64 animate-pulse rounded bg-muted" />
+        <div className="h-40 animate-pulse rounded-lg bg-muted" />
+      </div>
     );
   }
 
   if (!course) {
     return (
-      <AppShell>
-        <div className="rounded-lg border bg-card p-8 text-center">
+      <div className="rounded-lg border bg-card p-8 text-center">
           <h1 className="text-lg font-semibold">Course not found</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             It may have been deleted or you do not have access to it.
           </p>
-        </div>
-      </AppShell>
+      </div>
     );
   }
 
   return (
-    <AppShell>
-      <div className="space-y-5">
+    <div className="space-y-5">
         <header className="no-print">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {course.session} · {course.semester} · Section {course.section || "—"}
@@ -205,7 +203,6 @@ function CourseWorkspace() {
           )}
           {tab === "settings" && <SettingsTab course={course} />}
         </div>
-      </div>
-    </AppShell>
+    </div>
   );
 }
