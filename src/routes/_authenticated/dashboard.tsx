@@ -156,8 +156,13 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-lg border bg-card p-4 shadow-card">
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className="rise-in rounded-lg border bg-card p-4 shadow-card"
+            style={{ animationDelay: `${i * 40}ms` }}
+          >
+
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{s.label}</span>
               <s.icon className="h-4 w-4 text-muted-foreground" />
