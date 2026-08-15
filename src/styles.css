@@ -154,6 +154,96 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Motion primitives ---------- */
+@keyframes gradely-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradely-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gradely-flash {
+  0% {
+    background-color: color-mix(in oklab, var(--color-success) 18%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes gradely-pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@utility page-enter {
+  animation: gradely-fade-up 200ms ease-out both;
+}
+
+@utility rise-in {
+  animation: gradely-fade-up 260ms ease-out both;
+}
+
+@utility soft-in {
+  animation: gradely-fade 180ms ease-out both;
+}
+
+@utility pulse-soft {
+  animation: gradely-pulse-soft 1.4s ease-in-out infinite;
+}
+
+@utility card-lift {
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    border-color 180ms ease;
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@utility press {
+  transition: transform 120ms ease;
+  &:active {
+    transform: scale(0.975);
+  }
+}
+
+@utility flash-saved {
+  animation: gradely-flash 700ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+
 /* ---------- Official marksheet document ---------- */
 .sheet {
   background: white;
