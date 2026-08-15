@@ -99,7 +99,7 @@ export function SummaryTab({ course, rows }: { course: Course; rows: StudentSumm
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className="soft-in overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/60">
             <tr>
@@ -122,7 +122,7 @@ export function SummaryTab({ course, rows }: { course: Course; rows: StudentSumm
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.student.id} className="border-t hover:bg-muted/30">
+              <tr key={r.student.id} className="border-t transition-colors hover:bg-muted/40">
                 <td className="px-3 py-1.5 font-mono text-xs">{r.student.roll}</td>
                 <td className="px-3 py-1.5">
                   {r.student.name || "—"}

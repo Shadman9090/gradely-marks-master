@@ -101,12 +101,14 @@ function CourseWorkspace() {
 
   if (courseQ.isLoading && !courseQ.isError) {
     return (
-      <div className="space-y-3">
-        <div className="h-8 w-64 animate-pulse rounded bg-muted" />
-        <div className="h-40 animate-pulse rounded-lg bg-muted" />
+      <div className="soft-in space-y-3">
+        <div className="pulse-soft h-8 w-64 rounded bg-muted" />
+        <div className="pulse-soft h-10 w-full rounded bg-muted" />
+        <div className="pulse-soft h-40 rounded-lg bg-muted" />
       </div>
     );
   }
+
 
   if (!course) {
     return (
@@ -120,7 +122,7 @@ function CourseWorkspace() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="page-enter space-y-5">
         <header className="no-print">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {course.session} · {course.semester} · Section {course.section || "—"}
@@ -146,7 +148,7 @@ function CourseWorkspace() {
           ))}
         </nav>
 
-        <div>
+        <div key={tab} className="page-enter">
           {tab === "overview" && (
             <OverviewTab
               course={course}

@@ -144,7 +144,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="page-enter space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
@@ -156,8 +156,13 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-lg border bg-card p-4 shadow-card">
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className="rise-in rounded-lg border bg-card p-4 shadow-card"
+            style={{ animationDelay: `${i * 40}ms` }}
+          >
+
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{s.label}</span>
               <s.icon className="h-4 w-4 text-muted-foreground" />
@@ -201,20 +206,22 @@ function Dashboard() {
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((c) => {
+            {filtered.map((c, i) => {
               const e = perCourse.get(c.id);
               const progress = e && e.expected > 0 ? Math.min(100, (e.entered / e.expected) * 100) : 0;
               return (
-                <CourseCard
-                  key={c.id}
-                  course={c}
-                  studentCount={e?.students ?? 0}
-                  progress={progress}
-                  onDuplicate={() => duplicate(c)}
-                  onDelete={() => setPendingDelete(c)}
-                />
+                <div key={c.id} className="rise-in" style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}>
+                  <CourseCard
+                    course={c}
+                    studentCount={e?.students ?? 0}
+                    progress={progress}
+                    onDuplicate={() => duplicate(c)}
+                    onDelete={() => setPendingDelete(c)}
+                  />
+                </div>
               );
             })}
+
           </div>
         )}
       </div>

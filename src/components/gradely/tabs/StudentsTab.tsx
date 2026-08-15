@@ -142,7 +142,7 @@ export function StudentsTab({ course, students }: { course: Course; students: St
             placeholder="Search by roll, name or registration number"
             className="h-9 sm:max-w-sm"
           />
-          <div className="overflow-x-auto rounded-lg border bg-card">
+          <div className="soft-in overflow-x-auto rounded-lg border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/60">
                 <tr>
@@ -155,7 +155,7 @@ export function StudentsTab({ course, students }: { course: Course; students: St
               </thead>
               <tbody>
                 {filtered.map((s) => (
-                  <tr key={s.id} className="border-t hover:bg-muted/30">
+                  <tr key={s.id} className="border-t transition-colors hover:bg-muted/40">
                     <td className="px-3 py-2 font-mono text-xs">{s.roll}</td>
                     <td className="px-3 py-2">{s.name || "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{s.reg_no || "—"}</td>

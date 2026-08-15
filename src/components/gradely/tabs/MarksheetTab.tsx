@@ -58,7 +58,7 @@ export function MarksheetTab({
 
       <style>{`@page { size: A4 ${landscape ? "landscape" : "portrait"}; margin: 14mm; }`}</style>
 
-      <div className="overflow-x-auto">
+      <div className="soft-in overflow-x-auto">
         <div className="print-sheet mx-auto bg-card p-8 text-[11px] text-foreground shadow-card">
           <header className="border-b-2 border-foreground pb-3 text-center">
             <h1 className="font-serif text-lg font-bold uppercase tracking-wide">
