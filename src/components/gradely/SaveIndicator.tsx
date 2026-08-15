@@ -19,9 +19,14 @@ export function SaveIndicator({ state }: { state: SaveState }) {
   } as const;
   const it = map[state];
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${it.cls}`}>
+    <span
+      className={`soft-in inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs font-medium ${it.cls} ${
+        state === "saved" ? "flash-saved" : ""
+      }`}
+    >
       {it.icon}
       {it.label}
     </span>
   );
 }
+
