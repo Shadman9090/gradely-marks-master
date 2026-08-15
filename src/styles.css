@@ -356,6 +356,17 @@
     background: white !important;
   }
 
+  .brand-canvas,
+  .brand-grid {
+    background-image: none !important;
+    background-color: white !important;
+  }
+
+  .brand-grid::before {
+    display: none !important;
+  }
+
+
 
   .no-print,
   header.app-header,
