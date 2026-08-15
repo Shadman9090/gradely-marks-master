@@ -287,7 +287,7 @@ export function MarksGrid({
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border bg-card">
+          <div className="soft-in overflow-x-auto rounded-lg border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/60">
                 <tr>
@@ -312,7 +312,7 @@ export function MarksGrid({
                     if (d?.status === "graded" && d.value !== "") total += Number(d.value);
                   }
                   return (
-                    <tr key={s.id} className="border-t hover:bg-muted/30">
+                    <tr key={s.id} className="border-t transition-colors hover:bg-muted/40">
                       <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-mono text-xs">{s.roll}</td>
                       <td className="truncate px-3 py-1.5">{s.name || "—"}</td>
                       {items.map((a) => {
