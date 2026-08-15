@@ -25,7 +25,7 @@ export function CourseCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="card-lift flex h-full flex-col rounded-lg border bg-card p-5 shadow-card hover:shadow-panel">
+    <div className="card-lift flex h-full flex-col rounded-lg border border-primary/10 bg-card p-5 shadow-card hover:border-primary/25 hover:shadow-panel">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

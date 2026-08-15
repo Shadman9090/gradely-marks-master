@@ -47,8 +47,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="app-header sticky top-0 z-40 border-b bg-card/95 backdrop-blur">
+    <div className="brand-canvas min-h-screen">
+      <header className="app-header sticky top-0 z-40 border-b border-primary/10 bg-card/85 backdrop-blur">
+
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6">
           <Logo />
 
