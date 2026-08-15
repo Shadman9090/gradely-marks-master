@@ -206,20 +206,22 @@ function Dashboard() {
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((c) => {
+            {filtered.map((c, i) => {
               const e = perCourse.get(c.id);
               const progress = e && e.expected > 0 ? Math.min(100, (e.entered / e.expected) * 100) : 0;
               return (
-                <CourseCard
-                  key={c.id}
-                  course={c}
-                  studentCount={e?.students ?? 0}
-                  progress={progress}
-                  onDuplicate={() => duplicate(c)}
-                  onDelete={() => setPendingDelete(c)}
-                />
+                <div key={c.id} className="rise-in" style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}>
+                  <CourseCard
+                    course={c}
+                    studentCount={e?.students ?? 0}
+                    progress={progress}
+                    onDuplicate={() => duplicate(c)}
+                    onDelete={() => setPendingDelete(c)}
+                  />
+                </div>
               );
             })}
+
           </div>
         )}
       </div>
