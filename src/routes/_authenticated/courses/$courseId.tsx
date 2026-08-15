@@ -122,7 +122,7 @@ function CourseWorkspace() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="page-enter space-y-5">
         <header className="no-print">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {course.session} · {course.semester} · Section {course.section || "—"}
@@ -148,7 +148,7 @@ function CourseWorkspace() {
           ))}
         </nav>
 
-        <div>
+        <div key={tab} className="page-enter">
           {tab === "overview" && (
             <OverviewTab
               course={course}
