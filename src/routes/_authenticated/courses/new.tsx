@@ -149,7 +149,7 @@ function NewCourse() {
   const steps = ["Course information", "Assessment structure", "Review"];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="page-enter mx-auto max-w-3xl space-y-6">
       <div>
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
           <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to dashboard
