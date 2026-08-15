@@ -188,7 +188,7 @@ function NewCourse() {
                 : "Check everything looks right before creating the course."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent key={step} className="page-enter space-y-5">
           {step === 1 && (
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Course code" required>
