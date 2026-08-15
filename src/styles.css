@@ -293,10 +293,18 @@
     size: A4 landscape;
   }
 
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
   html,
   body {
     background: white !important;
   }
+
 
   .no-print,
   header.app-header,
