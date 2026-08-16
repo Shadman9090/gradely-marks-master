@@ -291,7 +291,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      owns_course: { Args: { _course_id: string }; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
