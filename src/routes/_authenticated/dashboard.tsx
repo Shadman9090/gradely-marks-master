@@ -93,16 +93,83 @@ function Dashboard() {
   }).length;
   const pending = (courses ?? []).length - completed;
 
+  const courseCount = courses?.length ?? 0;
   const stats: Stat[] = [
-    { label: "Active courses", value: courses?.length ?? 0, icon: BookOpen },
-    { label: "Total students", value: totalStudents, icon: Users },
-    { label: "Courses with pending marks", value: pending < 0 ? 0 : pending, icon: ClipboardList },
-    { label: "Completed marksheets", value: completed, icon: CheckCircle2 },
+    {
+      label: "Active courses",
+      value: courseCount,
+      hint: courseCount === 1 ? "1 course this semester" : `${courseCount} courses this semester`,
+      icon: BookOpen,
+    },
+    {
+      label: "Total students",
+      value: totalStudents,
+      hint: courseCount ? "Enrolled across all courses" : "Add students to a course",
+      icon: Users,
+    },
+    {
+      label: "Pending marks",
+      value: pending < 0 ? 0 : pending,
+      hint: pending > 0 ? "Courses awaiting entries" : "Everything is up to date",
+      icon: ClipboardList,
+    },
+    {
+      label: "Completed marksheets",
+      value: completed,
+      hint: completed ? "Ready to print" : "None finalised yet",
+      icon: CheckCircle2,
+    },
+  ];
+
+  const firstCourse = courses?.[0];
+  const quickActions = [
+    {
+      label: "Create course",
+      icon: Plus,
+      onClick: () => navigate({ to: "/courses/new" }),
+    },
+    {
+      label: "Import students",
+      icon: Upload,
+      onClick: () =>
+        firstCourse
+          ? navigate({
+              to: "/courses/$courseId",
+              params: { courseId: firstCourse.id },
+              search: { tab: "students" },
+            })
+          : navigate({ to: "/courses/new" }),
+    },
+    {
+      label: "Enter marks",
+      icon: Table2,
+      onClick: () =>
+        firstCourse
+          ? navigate({
+              to: "/courses/$courseId",
+              params: { courseId: firstCourse.id },
+              search: { tab: "tests" },
+            })
+          : navigate({ to: "/courses/new" }),
+    },
+    {
+      label: "Generate marksheet",
+      icon: FileText,
+      onClick: () =>
+        firstCourse
+          ? navigate({
+              to: "/courses/$courseId",
+              params: { courseId: firstCourse.id },
+              search: { tab: "marksheet" },
+            })
+          : navigate({ to: "/courses/new" }),
+    },
   ];
 
   const filtered = (courses ?? []).filter((c) =>
     `${c.code} ${c.title} ${c.session}`.toLowerCase().includes(search.toLowerCase()),
   );
+
 
   async function duplicate(course: Course) {
     try {
