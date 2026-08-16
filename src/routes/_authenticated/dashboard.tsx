@@ -46,6 +46,8 @@ type Stat = {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { user } = Route.useRouteContext();
+
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Course | null>(null);
