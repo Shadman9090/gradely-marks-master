@@ -2,7 +2,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BookOpen, CheckCircle2, ClipboardList, Plus, Users } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle2,
+  ClipboardList,
+  FileSpreadsheet,
+  FileText,
+  Plus,
+  Search,
+  Table2,
+  Upload,
+  Users,
+  X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { listCourses, friendlyError } from "@/lib/api";
 import type { Course } from "@/lib/gradely-types";
@@ -10,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseCard } from "@/components/gradely/CourseCard";
-import { EmptyState } from "@/components/gradely/EmptyState";
 import { ConfirmDialog } from "@/components/gradely/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -25,7 +36,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-type Stat = { label: string; value: string | number; icon: typeof BookOpen };
+type Stat = {
+  label: string;
+  value: string | number;
+  hint: string;
+  icon: typeof BookOpen;
+};
+
 
 function Dashboard() {
   const navigate = useNavigate();
