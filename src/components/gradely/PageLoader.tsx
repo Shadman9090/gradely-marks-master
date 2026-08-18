@@ -1,10 +1,14 @@
+import fullLogo from "@/assets/gradely-full.png.asset.json";
+
 export function PageLoader({ label = "Loading…" }: { label?: string }) {
   return (
     <div className="soft-in relative flex min-h-[40vh] flex-col items-center justify-center gap-3 overflow-hidden rounded-lg">
       <BackdropMarks />
-      <span className="pulse-soft flex h-10 w-10 items-center justify-center rounded-md bg-primary font-serif text-lg font-bold text-primary-foreground shadow-card">
-        G
-      </span>
+      <img
+        src={fullLogo.url}
+        alt="Gradely"
+        className="pulse-soft h-auto w-[min(72vw,320px)] max-w-full object-contain"
+      />
       <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
       <span className="h-0.5 w-24 overflow-hidden rounded-full bg-muted">
         <span className="pulse-soft block h-full w-full bg-primary/70" />

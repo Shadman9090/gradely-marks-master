@@ -1,3 +1,4 @@
+import gradelyIcon from "@/assets/gradely-icon.png.asset.json";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -110,9 +111,7 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col bg-surface">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-12">
         <Link to="/" className="mb-8 flex items-center gap-2.5 self-center">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary font-serif text-lg font-bold text-primary-foreground">
-            G
-          </span>
+          <img src={gradelyIcon.url} alt="Gradely" className="h-9 w-9 shrink-0 object-contain" />
           <span className="text-base font-semibold tracking-tight">GRADELY</span>
         </Link>
 
