@@ -1,4 +1,4 @@
-import fullLogo from "@/assets/gradely-full.jpeg.asset.json";
+import fullLogo from "@/assets/gradely-full.png.asset.json";
 
 export function PageLoader({ label = "Loading…" }: { label?: string }) {
   return (
@@ -7,7 +7,7 @@ export function PageLoader({ label = "Loading…" }: { label?: string }) {
       <img
         src={fullLogo.url}
         alt="Gradely"
-        className="pulse-soft h-auto w-[min(72vw,320px)] max-w-full object-contain mix-blend-multiply"
+        className="pulse-soft h-auto w-[min(72vw,320px)] max-w-full object-contain"
       />
       <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
       <span className="h-0.5 w-24 overflow-hidden rounded-full bg-muted">
