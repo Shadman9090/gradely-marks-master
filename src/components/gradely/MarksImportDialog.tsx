@@ -73,10 +73,17 @@ export function MarksImportDialog({
     }
   }
 
-  function buildMarks(): { marks: Mark[]; problems: string[] } {
-    const byRoll = new Map(students.map((s) => [String(s.roll).trim(), s]));
+  function buildMarks(extra: Student[] = []): {
+    marks: Mark[];
+    problems: string[];
+    newStudents: { roll: string; name: string }[];
+  } {
+    const byRoll = new Map(
+      [...students, ...extra].map((s) => [String(s.roll).trim(), s]),
+    );
     const marks: Mark[] = [];
     const problems: string[] = [];
+    const newStudents: { roll: string; name: string }[] = [];
     const seen = new Set<string>();
 
     rows.forEach((row, i) => {
@@ -92,7 +99,10 @@ export function MarksImportDialog({
       seen.add(roll);
       const student = byRoll.get(roll);
       if (!student) {
-        problems.push(`Row ${i + 2}: roll ${roll} is not in this course.`);
+        newStudents.push({
+          roll,
+          name: nameCol ? String(row[nameCol] ?? "").trim() : "",
+        });
         return;
       }
       for (const a of assessments) {
