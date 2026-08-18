@@ -1,3 +1,4 @@
+import gradelyIcon from "@/assets/gradely-icon.png.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ClipboardList,
