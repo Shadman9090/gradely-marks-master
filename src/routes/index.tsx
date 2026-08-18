@@ -68,9 +68,12 @@ function Landing() {
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary font-serif text-base font-bold text-primary-foreground">
-              G
-            </span>
+            <img
+              src={gradelyIcon.url}
+              alt="Gradely"
+              className="h-8 w-8 shrink-0 object-contain"
+            />
+
             <span className="text-[15px] font-semibold tracking-tight">GRADELY</span>
           </div>
           <div className="flex items-center gap-2">
