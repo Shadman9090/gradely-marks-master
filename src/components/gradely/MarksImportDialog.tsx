@@ -41,6 +41,7 @@ export function MarksImportDialog({
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<SheetRow[]>([]);
   const [rollCol, setRollCol] = useState("");
+  const [nameCol, setNameCol] = useState("");
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -49,6 +50,7 @@ export function MarksImportDialog({
     setHeaders([]);
     setRows([]);
     setRollCol("");
+    setNameCol("");
     setMapping({});
     setErrors([]);
   }
@@ -61,6 +63,7 @@ export function MarksImportDialog({
       setHeaders(h);
       setRows(r);
       setRollCol(guessColumn(h, ["roll", "roll no", "roll number", "student id"]));
+      setNameCol(guessColumn(h, ["name", "student name", "full name"]));
       const next: Record<string, string> = {};
       for (const a of assessments) next[a.id] = guessColumn(h, [a.name]);
       setMapping(next);
