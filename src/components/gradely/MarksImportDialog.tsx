@@ -41,6 +41,7 @@ export function MarksImportDialog({
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<SheetRow[]>([]);
   const [rollCol, setRollCol] = useState("");
+  const [nameCol, setNameCol] = useState("");
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -49,6 +50,7 @@ export function MarksImportDialog({
     setHeaders([]);
     setRows([]);
     setRollCol("");
+    setNameCol("");
     setMapping({});
     setErrors([]);
   }
@@ -61,6 +63,7 @@ export function MarksImportDialog({
       setHeaders(h);
       setRows(r);
       setRollCol(guessColumn(h, ["roll", "roll no", "roll number", "student id"]));
+      setNameCol(guessColumn(h, ["name", "student name", "full name"]));
       const next: Record<string, string> = {};
       for (const a of assessments) next[a.id] = guessColumn(h, [a.name]);
       setMapping(next);
@@ -70,10 +73,17 @@ export function MarksImportDialog({
     }
   }
 
-  function buildMarks(): { marks: Mark[]; problems: string[] } {
-    const byRoll = new Map(students.map((s) => [String(s.roll).trim(), s]));
+  function buildMarks(extra: Student[] = []): {
+    marks: Mark[];
+    problems: string[];
+    newStudents: { roll: string; name: string }[];
+  } {
+    const byRoll = new Map(
+      [...students, ...extra].map((s) => [String(s.roll).trim(), s]),
+    );
     const marks: Mark[] = [];
     const problems: string[] = [];
+    const newStudents: { roll: string; name: string }[] = [];
     const seen = new Set<string>();
 
     rows.forEach((row, i) => {
@@ -89,7 +99,10 @@ export function MarksImportDialog({
       seen.add(roll);
       const student = byRoll.get(roll);
       if (!student) {
-        problems.push(`Row ${i + 2}: roll ${roll} is not in this course.`);
+        newStudents.push({
+          roll,
+          name: nameCol ? String(row[nameCol] ?? "").trim() : "",
+        });
         return;
       }
       for (const a of assessments) {
