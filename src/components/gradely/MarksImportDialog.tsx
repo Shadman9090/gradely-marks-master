@@ -259,6 +259,22 @@ export function MarksImportDialog({
                 </Select>
               </div>
 
+              <div className="space-y-1.5">
+                <Label>Student name column (used for new enrolments)</Label>
+                <Select value={nameCol || "__none"} onValueChange={(v) => setNameCol(v === "__none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">No name column</SelectItem>
+                    {headers.map((h) => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Roll numbers not yet in this course will be enrolled automatically.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Match assessments to columns</Label>
                 {assessments.map((a) => (
