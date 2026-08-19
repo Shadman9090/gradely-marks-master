@@ -151,21 +151,54 @@ export function MarksImportDialog({
         });
       }
     });
-    return { marks, problems };
+    return { marks, problems, newStudents };
   }
 
   async function confirm() {
-    const { marks, problems } = buildMarks();
+    const first = buildMarks();
+    if (first.problems.length > 0) {
+      setErrors(first.problems);
+      toast.error("Please fix the problems listed before importing.");
+      return;
+    }
+    setBusy(true);
+
+    let created: Student[] = [];
+    if (first.newStudents.length > 0) {
+      const base = students.length;
+      const { data, error } = await supabase
+        .from("students")
+        .insert(
+          first.newStudents.map((s, i) => ({
+            course_id: course.id,
+            roll: s.roll,
+            name: s.name,
+            position: base + i,
+          })),
+        )
+        .select();
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
+      created = (data ?? []) as Student[];
+    }
+
+    const { marks, problems } = buildMarks(created);
     setErrors(problems);
     if (problems.length > 0) {
+      setBusy(false);
+      queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
       toast.error("Please fix the problems listed before importing.");
       return;
     }
     if (marks.length === 0) {
+      setBusy(false);
+      queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
       toast.error("No marks were found to import. Check your column mapping.");
       return;
     }
-    setBusy(true);
     const { error } = await supabase
       .from("marks")
       .upsert(marks, { onConflict: "assessment_id,student_id" });
@@ -174,8 +207,13 @@ export function MarksImportDialog({
       toast.error(friendlyError(error));
       return;
     }
+    queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
     queryClient.invalidateQueries({ queryKey: courseKeys.marks(course.id) });
-    toast.success(`${marks.length} marks imported.`);
+    toast.success(
+      created.length
+        ? `${marks.length} marks imported, ${created.length} students enrolled.`
+        : `${marks.length} marks imported.`,
+    );
     reset();
     onOpenChange(false);
   }
@@ -219,6 +257,22 @@ export function MarksImportDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Student name column (used for new enrolments)</Label>
+                <Select value={nameCol || "__none"} onValueChange={(v) => setNameCol(v === "__none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">No name column</SelectItem>
+                    {headers.map((h) => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Roll numbers not yet in this course will be enrolled automatically.
+                </p>
               </div>
 
               <div className="space-y-2">
