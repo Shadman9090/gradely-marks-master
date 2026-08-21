@@ -117,7 +117,9 @@ export function StudentsTab({ course, students }: { course: Course; students: St
         <div>
           <h2 className="text-base font-semibold">Students</h2>
           <p className="text-sm text-muted-foreground">
-            {students.length} enrolled in {course.code}
+            {students.filter((s) => s.status !== "excluded").length} active in {course.code}
+            {students.some((s) => s.status === "excluded") &&
+              ` · ${students.filter((s) => s.status === "excluded").length} excluded`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
