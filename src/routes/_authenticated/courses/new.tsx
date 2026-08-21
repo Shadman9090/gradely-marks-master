@@ -31,6 +31,23 @@ export const Route = createFileRoute("/_authenticated/courses/new")({
   component: NewCourse,
 });
 
+type RosterEntry = { roll: string; kind: "generated" | "other_series"; excluded: boolean };
+
+function parseRolls(input: string): string[] {
+  return input
+    .split(/[\s,;\n]+/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+/** Teachers may exclude by full roll (2110008) or by serial number (8). */
+function normaliseExclusion(raw: string, series: string, list: RosterEntry[]): string {
+  if (list.some((r) => r.roll === raw)) return raw;
+  const n = Number(raw);
+  if (Number.isInteger(n) && n > 0 && n < 10000) return `${series.trim()}${10000 + n}`;
+  return raw;
+}
+
 const SEMESTERS = ["Odd Semester", "Even Semester"];
 const LEVELS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Masters"];
 
