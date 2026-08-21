@@ -31,6 +31,23 @@ export const Route = createFileRoute("/_authenticated/courses/new")({
   component: NewCourse,
 });
 
+type RosterEntry = { roll: string; kind: "generated" | "other_series"; excluded: boolean };
+
+function parseRolls(input: string): string[] {
+  return input
+    .split(/[\s,;\n]+/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+/** Teachers may exclude by full roll (2110008) or by serial number (8). */
+function normaliseExclusion(raw: string, series: string, list: RosterEntry[]): string {
+  if (list.some((r) => r.roll === raw)) return raw;
+  const n = Number(raw);
+  if (Number.isInteger(n) && n > 0 && n < 10000) return `${series.trim()}${10000 + n}`;
+  return raw;
+}
+
 const SEMESTERS = ["Odd Semester", "Even Semester"];
 const LEVELS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Masters"];
 
@@ -57,6 +74,67 @@ function NewCourse() {
   const [settings, setSettings] = useState<CourseSettings>(DEFAULT_SETTINGS);
   const [ctCount, setCtCount] = useState(5);
   const [ctMax, setCtMax] = useState(20);
+
+  // ---- student roster configuration ----
+  const [autoRolls, setAutoRolls] = useState(true);
+  const [series, setSeries] = useState("");
+  const [studentCount, setStudentCount] = useState(60);
+  const [excludeInput, setExcludeInput] = useState("");
+  const [extraInput, setExtraInput] = useState("");
+  const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [rosterError, setRosterError] = useState("");
+
+  function buildRoster() {
+    const problems: string[] = [];
+    const list: RosterEntry[] = [];
+    const seen = new Set<string>();
+
+    if (autoRolls) {
+      const s = series.trim();
+      if (!/^\d{2,4}$/.test(s)) problems.push("Series must be a number, for example 21.");
+      if (!Number.isFinite(studentCount) || studentCount < 1 || studentCount > 500)
+        problems.push("Number of students must be between 1 and 500.");
+      if (problems.length === 0) {
+        for (let i = 1; i <= studentCount; i++) {
+          const roll = `${s}${10000 + i}`;
+          list.push({ roll, kind: "generated", excluded: false });
+          seen.add(roll);
+        }
+      }
+    }
+
+    const excluded = parseRolls(excludeInput);
+    for (const raw of excluded) {
+      const roll = normaliseExclusion(raw, series, list);
+      const hit = list.find((r) => r.roll === roll);
+      if (!hit) {
+        problems.push(`Excluded roll "${raw}" is not in the generated roster.`);
+        continue;
+      }
+      hit.excluded = true;
+    }
+
+    for (const roll of parseRolls(extraInput)) {
+      if (!/^\d{3,}$/.test(roll)) {
+        problems.push(`"${roll}" does not look like a valid roll number.`);
+        continue;
+      }
+      if (seen.has(roll)) {
+        problems.push(`Roll ${roll} is already in the roster.`);
+        continue;
+      }
+      seen.add(roll);
+      list.push({ roll, kind: "other_series", excluded: false });
+    }
+
+    if (problems.length) {
+      setRosterError(problems.join(" "));
+      return false;
+    }
+    setRosterError("");
+    setRoster(list);
+    return true;
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -132,6 +210,19 @@ function NewCourse() {
         if (aErr) throw aErr;
       }
 
+      if (roster.length) {
+        const { error: sErr } = await supabase.from("students").insert(
+          roster.map((r, i) => ({
+            course_id: course.id,
+            roll: r.roll,
+            section: form.section,
+            status: r.excluded ? "excluded" : r.kind === "other_series" ? "other_series" : "active",
+            position: i,
+          })),
+        );
+        if (sErr) throw sErr;
+      }
+
       queryClient.invalidateQueries();
       toast.success(`${course.code} created.`);
       navigate({
@@ -146,7 +237,8 @@ function NewCourse() {
     }
   }
 
-  const steps = ["Course information", "Assessment structure", "Review"];
+  const steps = ["Course information", "Assessment structure", "Students", "Review roster"];
+  const activeRoster = roster.filter((r) => !r.excluded);
 
   return (
     <div className="page-enter mx-auto max-w-3xl space-y-6">
@@ -351,6 +443,126 @@ function NewCourse() {
           )}
 
           {step === 3 && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="text-sm font-medium">Generate student rolls automatically?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Creates rolls in the standard format, e.g. series 21 → 2110001, 2110002 …
+                  </p>
+                </div>
+                <Switch checked={autoRolls} onCheckedChange={setAutoRolls} />
+              </div>
+
+              {autoRolls && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Series">
+                    <Input
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      placeholder="21"
+                    />
+                  </Field>
+                  <Field label="Number of students">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={studentCount}
+                      onChange={(e) => setStudentCount(Number(e.target.value))}
+                    />
+                  </Field>
+                </div>
+              )}
+
+              <Field label="Permanently absent / excluded students (optional)">
+                <Input
+                  value={excludeInput}
+                  onChange={(e) => setExcludeInput(e.target.value)}
+                  placeholder="2110008, 2110023  —  or just 8, 23"
+                />
+              </Field>
+              <p className="-mt-3 text-xs text-muted-foreground">
+                Excluded students are kept on record but left out of marks entry, calculations,
+                the marksheet and exports. You can change this later.
+              </p>
+
+              <Field label="Students from another series (optional)">
+                <Input
+                  value={extraInput}
+                  onChange={(e) => setExtraInput(e.target.value)}
+                  placeholder="2010045, 2010052"
+                />
+              </Field>
+              <p className="-mt-3 text-xs text-muted-foreground">
+                These rolls are added exactly as typed and behave like any other student.
+              </p>
+
+              {rosterError && <p className="text-sm text-destructive">{rosterError}</p>}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-5">
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="w-12 px-3 py-2 text-left font-medium">#</th>
+                      <th className="px-3 py-2 text-left font-medium">Roll</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
+                      <th className="w-24 px-3 py-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roster.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                          No students configured. You can add them later from the Students tab.
+                        </td>
+                      </tr>
+                    )}
+                    {roster.map((r, i) => (
+                      <tr key={r.roll} className="border-t hover:bg-muted/40">
+                        <td className="px-3 py-1.5 text-muted-foreground">{i + 1}</td>
+                        <td className="px-3 py-1.5 font-mono text-xs">{r.roll}</td>
+                        <td className="px-3 py-1.5 text-xs">
+                          {r.excluded
+                            ? "Excluded"
+                            : r.kind === "other_series"
+                              ? "Other series"
+                              : "Active"}
+                        </td>
+                        <td className="px-3 py-1.5 text-right">
+                          <button
+                            className="mr-2 text-xs text-primary hover:underline"
+                            onClick={() =>
+                              setRoster((list) =>
+                                list.map((x) =>
+                                  x.roll === r.roll ? { ...x, excluded: !x.excluded } : x,
+                                ),
+                              )
+                            }
+                          >
+                            {r.excluded ? "Include" : "Exclude"}
+                          </button>
+                          <button
+                            className="text-xs text-destructive hover:underline"
+                            onClick={() => setRoster((list) => list.filter((x) => x.roll !== r.roll))}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {activeRoster.length} active student{activeRoster.length === 1 ? "" : "s"} ·{" "}
+                {roster.length - activeRoster.length} excluded
+              </p>
+
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <Review k="Course" v={`${form.code} — ${form.title}`} />
               <Review k="Department" v={form.department} />

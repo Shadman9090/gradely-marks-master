@@ -46,6 +46,9 @@ export async function listStudents(courseId: string): Promise<Student[]> {
   return (data ?? []) as Student[];
 }
 
+/** Students that count towards marks, calculations and the marksheet. */
+export const isActiveStudent = (s: Student) => s.status !== "excluded";
+
 export async function listAssessments(courseId: string): Promise<Assessment[]> {
   const { data, error } = await supabase
     .from("assessments")
