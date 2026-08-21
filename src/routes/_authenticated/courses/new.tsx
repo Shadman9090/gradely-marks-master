@@ -237,7 +237,8 @@ function NewCourse() {
     }
   }
 
-  const steps = ["Course information", "Assessment structure", "Review"];
+  const steps = ["Course information", "Assessment structure", "Students", "Review roster"];
+  const activeRoster = roster.filter((r) => !r.excluded);
 
   return (
     <div className="page-enter mx-auto max-w-3xl space-y-6">
