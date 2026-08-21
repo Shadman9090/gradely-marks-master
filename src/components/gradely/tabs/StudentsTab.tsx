@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Upload, Download, Pencil } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Pencil, UserMinus, UserCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { courseKeys, friendlyError } from "@/lib/api";
 import { exportSheet, guessColumn, readWorkbook, type SheetRow } from "@/lib/excel";
@@ -166,18 +166,40 @@ export function StudentsTab({ course, students }: { course: Course; students: St
                   <th className="px-3 py-2 text-left font-medium">Name</th>
                   <th className="px-3 py-2 text-left font-medium">Registration</th>
                   <th className="px-3 py-2 text-left font-medium">Section</th>
-                  <th className="w-20 px-3 py-2" />
+                  <th className="px-3 py-2 text-left font-medium">Status</th>
+                  <th className="w-28 px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((s) => (
-                  <tr key={s.id} className="border-t transition-colors hover:bg-muted/40">
+                  <tr
+                    key={s.id}
+                    className={`border-t transition-colors hover:bg-muted/40 ${
+                      s.status === "excluded" ? "opacity-60" : ""
+                    }`}
+                  >
                     <td className="px-3 py-2 font-mono text-xs">{s.roll}</td>
                     <td className="px-3 py-2">{s.name || "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{s.reg_no || "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{s.section || "—"}</td>
                     <td className="px-3 py-2">
+                      <StatusBadge status={s.status} />
+                    </td>
+                    <td className="px-3 py-2">
                       <div className="flex justify-end gap-1">
+                        <button
+                          title={s.status === "excluded" ? "Include in course" : "Exclude from course"}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          onClick={() =>
+                            setStatus(s, s.status === "excluded" ? "active" : "excluded")
+                          }
+                        >
+                          {s.status === "excluded" ? (
+                            <UserCheck className="h-3.5 w-3.5" />
+                          ) : (
+                            <UserMinus className="h-3.5 w-3.5" />
+                          )}
+                        </button>
                         <button
                           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                           onClick={() =>
