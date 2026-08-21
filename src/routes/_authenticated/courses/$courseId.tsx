@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   courseKeys,
   getCourse,
+  isActiveStudent,
   listAssessments,
   listAttendance,
   listMarks,
@@ -72,7 +73,8 @@ function CourseWorkspace() {
     queryFn: () => listAttendance(courseId),
   });
 
-  const students = studentsQ.data ?? [];
+  const allStudents = studentsQ.data ?? [];
+  const students = useMemo(() => allStudents.filter(isActiveStudent), [allStudents]);
   const assessments = assessmentsQ.data ?? [];
   const marksList: Mark[] = marksQ.data ?? [];
   const attendanceList: Attendance[] = attendanceQ.data ?? [];
