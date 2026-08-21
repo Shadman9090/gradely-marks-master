@@ -160,7 +160,7 @@ function CourseWorkspace() {
               onGoTab={goTab}
             />
           )}
-          {tab === "students" && <StudentsTab course={course} students={students} />}
+          {tab === "students" && <StudentsTab course={course} students={allStudents} />}
           {tab === "tests" && (
             <MarksGrid
               course={course}
