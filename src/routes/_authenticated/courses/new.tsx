@@ -443,6 +443,126 @@ function NewCourse() {
           )}
 
           {step === 3 && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="text-sm font-medium">Generate student rolls automatically?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Creates rolls in the standard format, e.g. series 21 → 2110001, 2110002 …
+                  </p>
+                </div>
+                <Switch checked={autoRolls} onCheckedChange={setAutoRolls} />
+              </div>
+
+              {autoRolls && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Series">
+                    <Input
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      placeholder="21"
+                    />
+                  </Field>
+                  <Field label="Number of students">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={studentCount}
+                      onChange={(e) => setStudentCount(Number(e.target.value))}
+                    />
+                  </Field>
+                </div>
+              )}
+
+              <Field label="Permanently absent / excluded students (optional)">
+                <Input
+                  value={excludeInput}
+                  onChange={(e) => setExcludeInput(e.target.value)}
+                  placeholder="2110008, 2110023  —  or just 8, 23"
+                />
+              </Field>
+              <p className="-mt-3 text-xs text-muted-foreground">
+                Excluded students are kept on record but left out of marks entry, calculations,
+                the marksheet and exports. You can change this later.
+              </p>
+
+              <Field label="Students from another series (optional)">
+                <Input
+                  value={extraInput}
+                  onChange={(e) => setExtraInput(e.target.value)}
+                  placeholder="2010045, 2010052"
+                />
+              </Field>
+              <p className="-mt-3 text-xs text-muted-foreground">
+                These rolls are added exactly as typed and behave like any other student.
+              </p>
+
+              {rosterError && <p className="text-sm text-destructive">{rosterError}</p>}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-5">
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="w-12 px-3 py-2 text-left font-medium">#</th>
+                      <th className="px-3 py-2 text-left font-medium">Roll</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
+                      <th className="w-24 px-3 py-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roster.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                          No students configured. You can add them later from the Students tab.
+                        </td>
+                      </tr>
+                    )}
+                    {roster.map((r, i) => (
+                      <tr key={r.roll} className="border-t hover:bg-muted/40">
+                        <td className="px-3 py-1.5 text-muted-foreground">{i + 1}</td>
+                        <td className="px-3 py-1.5 font-mono text-xs">{r.roll}</td>
+                        <td className="px-3 py-1.5 text-xs">
+                          {r.excluded
+                            ? "Excluded"
+                            : r.kind === "other_series"
+                              ? "Other series"
+                              : "Active"}
+                        </td>
+                        <td className="px-3 py-1.5 text-right">
+                          <button
+                            className="mr-2 text-xs text-primary hover:underline"
+                            onClick={() =>
+                              setRoster((list) =>
+                                list.map((x) =>
+                                  x.roll === r.roll ? { ...x, excluded: !x.excluded } : x,
+                                ),
+                              )
+                            }
+                          >
+                            {r.excluded ? "Include" : "Exclude"}
+                          </button>
+                          <button
+                            className="text-xs text-destructive hover:underline"
+                            onClick={() => setRoster((list) => list.filter((x) => x.roll !== r.roll))}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {activeRoster.length} active student{activeRoster.length === 1 ? "" : "s"} ·{" "}
+                {roster.length - activeRoster.length} excluded
+              </p>
+
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <Review k="Course" v={`${form.code} — ${form.title}`} />
               <Review k="Department" v={form.department} />
