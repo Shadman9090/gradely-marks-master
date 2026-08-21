@@ -210,6 +210,19 @@ function NewCourse() {
         if (aErr) throw aErr;
       }
 
+      if (roster.length) {
+        const { error: sErr } = await supabase.from("students").insert(
+          roster.map((r, i) => ({
+            course_id: course.id,
+            roll: r.roll,
+            section: form.section,
+            status: r.excluded ? "excluded" : r.kind === "other_series" ? "other_series" : "active",
+            position: i,
+          })),
+        );
+        if (sErr) throw sErr;
+      }
+
       queryClient.invalidateQueries();
       toast.success(`${course.code} created.`);
       navigate({
