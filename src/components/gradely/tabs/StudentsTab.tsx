@@ -439,3 +439,19 @@ function StudentImportDialog({
     </Dialog>
   );
 }
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "excluded")
+    return (
+      <span className="rounded border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[11px] font-medium text-destructive">
+        Excluded
+      </span>
+    );
+  if (status === "other_series")
+    return (
+      <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+        Other series
+      </span>
+    );
+  return <span className="text-[11px] text-muted-foreground">Active</span>;
+}
