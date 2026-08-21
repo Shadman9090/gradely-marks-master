@@ -75,6 +75,20 @@ export function StudentsTab({ course, students }: { course: Course; students: St
     toast.success("Student saved.");
   }
 
+  async function setStatus(s: Student, status: string) {
+    const { error } = await supabase.from("students").update({ status }).eq("id", s.id);
+    if (error) {
+      toast.error(friendlyError(error));
+      return;
+    }
+    queryClient.invalidateQueries();
+    toast.success(
+      status === "excluded"
+        ? `${s.roll} excluded from this course.`
+        : `${s.roll} restored to the active list.`,
+    );
+  }
+
   async function remove(s: Student) {
     const { error } = await supabase.from("students").delete().eq("id", s.id);
     if (error) {
