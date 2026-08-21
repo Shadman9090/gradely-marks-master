@@ -58,6 +58,67 @@ function NewCourse() {
   const [ctCount, setCtCount] = useState(5);
   const [ctMax, setCtMax] = useState(20);
 
+  // ---- student roster configuration ----
+  const [autoRolls, setAutoRolls] = useState(true);
+  const [series, setSeries] = useState("");
+  const [studentCount, setStudentCount] = useState(60);
+  const [excludeInput, setExcludeInput] = useState("");
+  const [extraInput, setExtraInput] = useState("");
+  const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [rosterError, setRosterError] = useState("");
+
+  function buildRoster() {
+    const problems: string[] = [];
+    const list: RosterEntry[] = [];
+    const seen = new Set<string>();
+
+    if (autoRolls) {
+      const s = series.trim();
+      if (!/^\d{2,4}$/.test(s)) problems.push("Series must be a number, for example 21.");
+      if (!Number.isFinite(studentCount) || studentCount < 1 || studentCount > 500)
+        problems.push("Number of students must be between 1 and 500.");
+      if (problems.length === 0) {
+        for (let i = 1; i <= studentCount; i++) {
+          const roll = `${s}${10000 + i}`;
+          list.push({ roll, kind: "generated", excluded: false });
+          seen.add(roll);
+        }
+      }
+    }
+
+    const excluded = parseRolls(excludeInput);
+    for (const raw of excluded) {
+      const roll = normaliseExclusion(raw, series, list);
+      const hit = list.find((r) => r.roll === roll);
+      if (!hit) {
+        problems.push(`Excluded roll "${raw}" is not in the generated roster.`);
+        continue;
+      }
+      hit.excluded = true;
+    }
+
+    for (const roll of parseRolls(extraInput)) {
+      if (!/^\d{3,}$/.test(roll)) {
+        problems.push(`"${roll}" does not look like a valid roll number.`);
+        continue;
+      }
+      if (seen.has(roll)) {
+        problems.push(`Roll ${roll} is already in the roster.`);
+        continue;
+      }
+      seen.add(roll);
+      list.push({ roll, kind: "other_series", excluded: false });
+    }
+
+    if (problems.length) {
+      setRosterError(problems.join(" "));
+      return false;
+    }
+    setRosterError("");
+    setRoster(list);
+    return true;
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
