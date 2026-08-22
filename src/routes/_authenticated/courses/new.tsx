@@ -563,31 +563,32 @@ function NewCourse() {
                 {roster.length - activeRoster.length} excluded
               </p>
 
-            <dl className="grid gap-3 text-sm sm:grid-cols-2">
-              <Review k="Course" v={`${form.code} — ${form.title}`} />
-              <Review k="Department" v={form.department} />
-              <Review k="Session" v={[form.level, form.semester, form.session].filter(Boolean).join(" · ")} />
-              <Review k="Teacher" v={[form.teacher_name, form.teacher_designation].filter(Boolean).join(", ")} />
-              <Review k="Class tests" v={`${ctCount} × ${ctMax} marks`} />
-              <Review
-                k="Class test policy"
-                v={
-                  settings.ctPolicy === "best_n"
-                    ? `Best ${settings.ctBestN} → ${settings.ctConvertedMax} marks`
-                    : `Average of all → ${settings.ctConvertedMax} marks`
-                }
-              />
-              <Review
-                k="Attendance"
-                v={settings.useAttendance ? `${settings.attendanceMax} marks` : "Not used"}
-              />
-              <Review
-                k="Assignment"
-                v={settings.useAssignment ? `${settings.assignmentMax} marks` : "Not used"}
-              />
-              <Review k="Laboratory" v={settings.useLab ? `${settings.labMax} marks` : "Not used"} />
-              <Review k="Course total" v={`${settings.totalMax} marks`} />
-            </dl>
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <Review k="Course" v={`${form.code} — ${form.title}`} />
+                <Review k="Department" v={form.department} />
+                <Review k="Session" v={[form.level, form.semester, form.session].filter(Boolean).join(" · ")} />
+                <Review k="Teacher" v={[form.teacher_name, form.teacher_designation].filter(Boolean).join(", ")} />
+                <Review k="Class tests" v={`${ctCount} × ${ctMax} marks`} />
+                <Review
+                  k="Class test policy"
+                  v={
+                    settings.ctPolicy === "best_n"
+                      ? `Best ${settings.ctBestN} → ${settings.ctConvertedMax} marks`
+                      : `Average of all → ${settings.ctConvertedMax} marks`
+                  }
+                />
+                <Review
+                  k="Attendance"
+                  v={settings.useAttendance ? `${settings.attendanceMax} marks` : "Not used"}
+                />
+                <Review
+                  k="Assignment"
+                  v={settings.useAssignment ? `${settings.assignmentMax} marks` : "Not used"}
+                />
+                <Review k="Laboratory" v={settings.useLab ? `${settings.labMax} marks` : "Not used"} />
+                <Review k="Course total" v={`${settings.totalMax} marks`} />
+              </dl>
+            </div>
           )}
 
           <div className="flex justify-between border-t pt-4">
@@ -597,8 +598,16 @@ function NewCourse() {
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" /> {step === 1 ? "Cancel" : "Back"}
             </Button>
-            {step < 3 ? (
-              <Button onClick={() => setStep(step + 1)}>
+            {step < 4 ? (
+              <Button
+                onClick={() => {
+                  if (step === 3) {
+                    const ok = buildRoster();
+                    if (ok === false) return;
+                  }
+                  setStep(step + 1);
+                }}
+              >
                 Continue <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             ) : (
@@ -607,6 +616,7 @@ function NewCourse() {
               </Button>
             )}
           </div>
+
         </CardContent>
       </Card>
     </div>
