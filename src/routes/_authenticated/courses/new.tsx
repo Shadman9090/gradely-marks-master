@@ -237,7 +237,7 @@ function NewCourse() {
     }
   }
 
-  const steps = ["Course information", "Assessment structure", "Students", "Review roster"];
+  const steps = ["Course information", "Assessment structure", "Student / roll configuration", "Review roster"];
   const activeRoster = roster.filter((r) => !r.excluded);
 
   return (
