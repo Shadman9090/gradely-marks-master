@@ -3,12 +3,11 @@ import { Printer, FileDown, FileSpreadsheet } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import type { MarkMap, StudentSummary } from "@/lib/calc";
-import { fmt, markKey } from "@/lib/calc";
 import type { Assessment, Course } from "@/lib/gradely-types";
-import { exportSheet } from "@/lib/excel";
+import { buildMarksheet, splitRows, type MarksheetModel, type MarksheetRow } from "@/lib/marksheet";
+import { exportMarksheetExcel } from "@/lib/marksheet-excel";
 import ruetLogo from "@/assets/ruet-logo.jpeg.asset.json";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "../EmptyState";
 
 export function MarksheetTab({
@@ -22,16 +21,12 @@ export function MarksheetTab({
   rows: StudentSummary[];
   marks: MarkMap;
 }) {
-  const s = course.settings;
-  const [showName, setShowName] = useState(s.showNameOnSheet);
-  const [showComponents, setShowComponents] = useState(true);
-  const [landscape, setLandscape] = useState(s.sheetOrientation === "landscape");
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  const cts = useMemo(
-    () => assessments.filter((a) => a.category === "ct").sort((a, b) => a.position - b.position),
-    [assessments],
+  const model = useMemo(
+    () => buildMarksheet(course, assessments, rows, marks),
+    [course, assessments, rows, marks],
   );
 
   if (rows.length === 0)
@@ -39,7 +34,7 @@ export function MarksheetTab({
 
   async function exportPdf() {
     if (!sheetRef.current) return;
-    setExporting(true);
+    setExporting("pdf");
     try {
       const canvas = await html2canvas(sheetRef.current, {
         scale: 2,
@@ -47,80 +42,36 @@ export function MarksheetTab({
         backgroundColor: "#ffffff",
         logging: false,
       });
-
-      const imgWidth = landscape ? 297 : 210; // A4 mm
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pageHeight = landscape ? 210 : 297;
-
-      const pdf = new jsPDF({
-        orientation: landscape ? "landscape" : "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
+      const pageHeight = 297;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       let heightLeft = imgHeight;
       let position = 0;
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
-
       while (heightLeft > 0) {
         position -= pageHeight;
         pdf.addPage();
         pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
-
       pdf.save(`${course.code}-marksheet.pdf`);
     } catch {
-      // Fallback to browser print if PDF generation fails
       window.print();
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
-  function exportExcel() {
-    const header: (string | number)[] = ["SL", "Roll"];
-    if (showName) header.push("Name");
-    if (showComponents) {
-      cts.forEach((c) => header.push(`${c.name} (${c.max_marks})`));
+  async function exportExcel() {
+    setExporting("xlsx");
+    try {
+      await exportMarksheetExcel(`${course.code}-marksheet.xlsx`, model, ruetLogo.url);
+    } finally {
+      setExporting(null);
     }
-    header.push(`CT (${s.ctConvertedMax})`);
-    if (s.useAttendance) header.push(`Att. (${s.attendanceMax})`);
-    if (s.useAssignment) header.push(`Assign. (${s.assignmentMax})`);
-    if (s.useLab) header.push(`Lab (${s.labMax})`);
-    header.push(`Total (${s.totalMax})`);
-    header.push("Grade");
-
-    const data: (string | number | null)[][] = [header];
-
-    rows.forEach((r, i) => {
-      const row: (string | number | null)[] = [i + 1, r.student.roll];
-      if (showName) row.push(r.student.name || "—");
-      if (showComponents) {
-        cts.forEach((c) => {
-          const m = marks.get(markKey(c.id, r.student.id));
-          if (!m) row.push("—");
-          else if (m.status === "absent") row.push("A");
-          else if (m.status === "na") row.push("NA");
-          else if (m.status === "missing" || m.value === null) row.push("—");
-          else row.push(m.value);
-        });
-      }
-      row.push(fmt(r.ct.converted, s));
-      if (s.useAttendance) row.push(fmt(r.attendanceMark, s));
-      if (s.useAssignment) row.push(fmt(r.assignment.converted, s));
-      if (s.useLab) row.push(fmt(r.lab.converted, s));
-      row.push(fmt(r.total, s));
-      row.push(r.grade);
-      data.push(row);
-    });
-
-    exportSheet(`${course.code}-marksheet.xlsx`, [
-      { name: "Marksheet", rows: data },
-    ]);
   }
 
   return (
@@ -129,28 +80,17 @@ export function MarksheetTab({
         <div>
           <h2 className="text-base font-semibold">Marksheet</h2>
           <p className="text-sm text-muted-foreground">
-            Print-ready A4 sheet. Export to PDF or Excel, or use your browser's print dialog.
+            Official format sheet. PDF and Excel exports use the same layout.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={showName} onCheckedChange={(v) => setShowName(!!v)} /> Student names
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={showComponents} onCheckedChange={(v) => setShowComponents(!!v)} />
-            Component breakdown
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={landscape} onCheckedChange={(v) => setLandscape(!!v)} /> Landscape
-          </label>
-        </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={exportExcel}>
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Export Excel
+          <Button size="sm" variant="outline" onClick={exportExcel} disabled={exporting !== null}>
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+            {exporting === "xlsx" ? "Generating…" : "Export Excel"}
           </Button>
-          <Button size="sm" variant="outline" onClick={exportPdf} disabled={exporting}>
+          <Button size="sm" variant="outline" onClick={exportPdf} disabled={exporting !== null}>
             <FileDown className="mr-1.5 h-3.5 w-3.5" />
-            {exporting ? "Generating…" : "Export PDF"}
+            {exporting === "pdf" ? "Generating…" : "Export PDF"}
           </Button>
           <Button size="sm" onClick={() => window.print()}>
             <Printer className="mr-1.5 h-3.5 w-3.5" /> Print
@@ -158,107 +98,27 @@ export function MarksheetTab({
         </div>
       </div>
 
-      <style>{`@page { size: A4 ${landscape ? "landscape" : "portrait"}; margin: 14mm; }`}</style>
+      <style>{`@page { size: A4 portrait; margin: 12mm; }`}</style>
 
       <div className="soft-in overflow-x-auto">
         <div
           ref={sheetRef}
-          className="print-sheet mx-auto bg-card p-8 text-[11px] text-foreground shadow-card"
+          className="print-sheet mx-auto bg-white p-8 font-serif text-[11px] text-black shadow-card"
         >
-          <header className="flex items-center gap-4 border-b-2 border-foreground pb-3">
-            <img
-              src={ruetLogo.url}
-              alt="RUET"
-              crossOrigin="anonymous"
-              className="h-20 w-20 shrink-0 object-contain"
-            />
-            <div className="flex-1 text-center">
-              <h1 className="font-serif text-lg font-bold uppercase tracking-wide">
-                {course.university || "University"}
-              </h1>
-              <p className="text-xs">{course.department}</p>
-              <p className="mt-2 font-serif text-sm font-semibold">Continuous Assessment Marksheet</p>
-            </div>
-            <div className="h-20 w-20 shrink-0" aria-hidden />
-          </header>
-
-          <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-1 text-[11px]">
-            <Row label="Course code" value={course.code} />
-            <Row label="Session" value={course.session} />
-            <Row label="Course title" value={course.title} />
-            <Row label="Semester" value={course.semester} />
-            <Row label="Level / Term" value={course.level} />
-            <Row label="Section" value={course.section} />
-            <Row label="Academic year" value={course.academic_year} />
-            <Row label="Course teacher" value={course.teacher_name} />
-          </div>
-
-          <table className="mt-4 w-full border-collapse border border-foreground/70">
-            <thead>
-              <tr className="bg-muted/60">
-                <Th>SL</Th>
-                <Th>Roll</Th>
-                {showName && <Th className="text-left">Name</Th>}
-                {showComponents &&
-                  cts.map((c) => (
-                    <Th key={c.id}>
-                      {c.name}
-                      <span className="block font-normal">({c.max_marks})</span>
-                    </Th>
-                  ))}
-                <Th>
-                  CT<span className="block font-normal">({s.ctConvertedMax})</span>
-                </Th>
-                {s.useAttendance && (
-                  <Th>
-                    Att.<span className="block font-normal">({s.attendanceMax})</span>
-                  </Th>
-                )}
-                {s.useAssignment && (
-                  <Th>
-                    Assign.<span className="block font-normal">({s.assignmentMax})</span>
-                  </Th>
-                )}
-                {s.useLab && (
-                  <Th>
-                    Lab<span className="block font-normal">({s.labMax})</span>
-                  </Th>
-                )}
-                <Th>
-                  Total<span className="block font-normal">({s.totalMax})</span>
-                </Th>
-                <Th>Grade</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.student.id} className="avoid-break">
-                  <Td>{i + 1}</Td>
-                  <Td className="font-mono">{r.student.roll}</Td>
-                  {showName && <Td className="text-left">{r.student.name}</Td>}
-                  {showComponents &&
-                    cts.map((c) => (
-                      <Td key={c.id}>{markCell(marks, r.student.id, c)}</Td>
-                    ))}
-                  <Td>{fmt(r.ct.converted, s)}</Td>
-                  {s.useAttendance && <Td>{fmt(r.attendanceMark, s)}</Td>}
-                  {s.useAssignment && <Td>{fmt(r.assignment.converted, s)}</Td>}
-                  {s.useLab && <Td>{fmt(r.lab.converted, s)}</Td>}
-                  <Td className="font-semibold">{fmt(r.total, s)}</Td>
-                  <Td>{r.grade}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="mt-14 flex justify-between text-[11px]">
+          <SheetHeader model={model} />
+          <SheetTable model={model} />
+          <div className="mt-16 flex justify-between text-[11px]">
             <div className="text-center">
-              <div className="w-52 border-t border-foreground pt-1">Signature of Course Teacher</div>
-              <p className="mt-1">{course.teacher_name}</p>
-              <p className="text-muted-foreground">{course.teacher_designation}</p>
+              <div className="w-56 border-t border-black pt-1 font-semibold">
+                Signature of Course Teacher
+              </div>
+              <p className="mt-1">{model.teacherName}</p>
+              <p>{model.teacherDesignation}</p>
             </div>
             <div className="text-center">
-              <div className="w-52 border-t border-foreground pt-1">Head of the Department</div>
+              <div className="w-56 border-t border-black pt-1 font-semibold">
+                Head of the Department
+              </div>
               <p className="mt-1">{course.department}</p>
             </div>
           </div>
@@ -268,36 +128,81 @@ export function MarksheetTab({
   );
 }
 
-function markCell(marks: MarkMap, studentId: string, c: Assessment) {
-  const m = marks.get(markKey(c.id, studentId));
-  if (!m) return "—";
-  if (m.status === "absent") return "A";
-  if (m.status === "na") return "NA";
-  if (m.status === "missing" || m.value === null) return "—";
-  return String(m.value);
-}
-
-function Row({ label, value }: { label: string; value: string }) {
+function SheetHeader({ model }: { model: MarksheetModel }) {
   return (
-    <p>
-      <span className="inline-block w-28 text-muted-foreground">{label}</span>
-      <span className="font-medium">: {value || "—"}</span>
-    </p>
+    <header className="relative text-center">
+      <img
+        src={ruetLogo.url}
+        alt="RUET"
+        crossOrigin="anonymous"
+        className="absolute left-0 top-1 h-20 w-20 object-contain"
+      />
+      <p className="text-[11px] italic">{model.title1}</p>
+      <h1 className="text-[19px] font-bold leading-tight">{model.university}</h1>
+      {model.faculty && <p className="text-[16px] font-bold leading-tight">{model.faculty}</p>}
+      {model.department && (
+        <p className="text-[15px] font-bold leading-tight">{model.department}</p>
+      )}
+      <p className="mt-0.5 text-[12px] font-semibold">{model.examLine}</p>
+      <p className="mt-3 text-[13px] font-bold">{model.subjectLine}</p>
+    </header>
   );
 }
 
-function Th({ children, className = "" }: { children?: React.ReactNode; className?: string }) {
+function SheetTable({ model }: { model: MarksheetModel }) {
+  const { left, right } = splitRows(model.rows);
+  const max = Math.max(left.length, right.length);
   return (
-    <th className={`border border-foreground/70 px-1.5 py-1 text-center font-semibold ${className}`}>
-      {children}
-    </th>
+    <div className="mt-4 flex gap-4">
+      <Block model={model} rows={left} count={max} />
+      <Block model={model} rows={right} count={max} />
+    </div>
   );
 }
 
-function Td({ children, className = "" }: { children?: React.ReactNode; className?: string }) {
+function Block({
+  model,
+  rows,
+  count,
+}: {
+  model: MarksheetModel;
+  rows: MarksheetRow[];
+  count: number;
+}) {
   return (
-    <td className={`numeric border border-foreground/70 px-1.5 py-1 text-center ${className}`}>
-      {children}
-    </td>
+    <table className="w-1/2 border-collapse border border-black">
+      <thead>
+        <tr>
+          {model.columns.map((c) => (
+            <th
+              key={c.key}
+              className="border border-black px-1 py-0.5 text-center text-[10px] font-bold"
+            >
+              {c.label}
+              {c.sub && <span className="block font-bold">{c.sub}</span>}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {Array.from({ length: count }).map((_, i) => {
+          const r = rows[i];
+          return (
+            <tr key={i} className="avoid-break">
+              {model.columns.map((c, ci) => (
+                <td
+                  key={c.key}
+                  className={`border border-black px-1 py-0.5 text-center text-[10px] ${
+                    ci === model.columns.length - 1 ? "font-semibold" : ""
+                  }`}
+                >
+                  {r?.cells[ci] ?? ""}
+                </td>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
