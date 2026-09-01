@@ -130,21 +130,23 @@ export function MarksheetTab({
 
 function SheetHeader({ model }: { model: MarksheetModel }) {
   return (
-    <header className="relative text-center">
+    <header className="flex items-center gap-6">
       <img
         src={ruetLogo.url}
         alt="RUET"
         crossOrigin="anonymous"
-        className="absolute left-0 top-1 h-20 w-20 object-contain"
+        className="h-20 w-20 shrink-0 object-contain"
       />
-      <p className="text-[11px] italic">{model.title1}</p>
-      <h1 className="text-[19px] font-bold leading-tight">{model.university}</h1>
-      {model.faculty && <p className="text-[16px] font-bold leading-tight">{model.faculty}</p>}
-      {model.department && (
-        <p className="text-[15px] font-bold leading-tight">{model.department}</p>
-      )}
-      <p className="mt-0.5 text-[12px] font-semibold">{model.examLine}</p>
-      <p className="mt-3 text-[13px] font-bold">{model.subjectLine}</p>
+      <div className="flex-1 text-center">
+        <p className="text-[11px] italic">{model.title1}</p>
+        <h1 className="text-[19px] font-bold leading-tight">{model.university}</h1>
+        {model.faculty && <p className="text-[16px] font-bold leading-tight">{model.faculty}</p>}
+        {model.department && (
+          <p className="text-[15px] font-bold leading-tight">{model.department}</p>
+        )}
+        <p className="mt-0.5 text-[12px] font-semibold">{model.examLine}</p>
+        <p className="mt-3 text-[13px] font-bold">{model.subjectLine}</p>
+      </div>
     </header>
   );
 }
