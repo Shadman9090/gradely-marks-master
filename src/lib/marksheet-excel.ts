@@ -32,15 +32,12 @@ export async function exportMarksheetExcel(
   const totalCols = n * 2 + gap;
 
   // column widths
-  for (let i = 0; i < totalCols; i++) {
-    const col = ws.getColumn(i + 1);
-    if (i === n) col.width = 2;
-    else col.width = m.columns[i % (n + gap) < n ? i % n : 0]!.width;
-  }
+  ws.getColumn(n + 1).width = 2;
   for (let i = 0; i < n; i++) {
     ws.getColumn(i + 1).width = m.columns[i]!.width;
     ws.getColumn(n + gap + i + 1).width = m.columns[i]!.width;
   }
+
 
   const lastCol = totalCols;
   const titleRows: { text: string; size: number; bold: boolean; height: number }[] = [
