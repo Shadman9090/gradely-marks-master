@@ -42,6 +42,7 @@ export function MarksImportDialog({
   const [rows, setRows] = useState<SheetRow[]>([]);
   const [rollCol, setRollCol] = useState("");
   const [nameCol, setNameCol] = useState("");
+  const [regCol, setRegCol] = useState("");
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -51,6 +52,7 @@ export function MarksImportDialog({
     setRows([]);
     setRollCol("");
     setNameCol("");
+    setRegCol("");
     setMapping({});
     setErrors([]);
   }
@@ -64,6 +66,7 @@ export function MarksImportDialog({
       setRows(r);
       setRollCol(guessColumn(h, ["roll", "roll no", "roll number", "student id"]));
       setNameCol(guessColumn(h, ["name", "student name", "full name"]));
+      setRegCol(guessColumn(h, ["registration", "reg no", "reg"]));
       const next: Record<string, string> = {};
       for (const a of assessments) next[a.id] = guessColumn(h, [a.name]);
       setMapping(next);
@@ -72,6 +75,7 @@ export function MarksImportDialog({
       toast.error("That file could not be read. Please upload a valid .xlsx or .csv file.");
     }
   }
+
 
   function buildMarks(extra: Student[] = []): {
     marks: Mark[];
