@@ -80,36 +80,48 @@ export function MarksImportDialog({
   function buildMarks(extra: Student[] = []): {
     marks: Mark[];
     problems: string[];
-    newStudents: { roll: string; name: string }[];
+    newStudents: { roll: string; name: string; reg_no: string }[];
+    infoUpdates: { id: string; patch: Record<string, string> }[];
+    matched: number;
+    skipped: number;
   } {
     const byRoll = new Map(
       [...students, ...extra].map((s) => [String(s.roll).trim(), s]),
     );
     const marks: Mark[] = [];
     const problems: string[] = [];
-    const newStudents: { roll: string; name: string }[] = [];
+    const newStudents: { roll: string; name: string; reg_no: string }[] = [];
+    const infoUpdates: { id: string; patch: Record<string, string> }[] = [];
     const seen = new Set<string>();
+    let matched = 0;
+    let skipped = 0;
 
     rows.forEach((row, i) => {
       const roll = String(row[rollCol] ?? "").trim();
+      const name = nameCol ? String(row[nameCol] ?? "").trim() : "";
+      const reg_no = regCol ? String(row[regCol] ?? "").trim() : "";
       if (!roll) {
-        problems.push(`Row ${i + 2}: missing roll number.`);
+        skipped++;
+        problems.push(`Row ${i + 2}: missing roll number — skipped.`);
         return;
       }
       if (seen.has(roll)) {
-        problems.push(`Row ${i + 2}: duplicate roll number ${roll}.`);
+        skipped++;
+        problems.push(`Row ${i + 2}: duplicate roll number ${roll} inside the file — skipped.`);
         return;
       }
       seen.add(roll);
       const student = byRoll.get(roll);
       if (!student) {
-        newStudents.push({
-          roll,
-          name: nameCol ? String(row[nameCol] ?? "").trim() : "",
-        });
+        newStudents.push({ roll, name, reg_no });
         return;
       }
-      for (const a of assessments) {
+      matched++;
+      const patch: Record<string, string> = {};
+      if (name && !String(student.name ?? "").trim()) patch['name'] = name;
+      if (reg_no && !String(student.reg_no ?? "").trim()) patch['reg_no'] = reg_no;
+      if (Object.keys(patch).length > 0) infoUpdates.push({ id: student.id, patch });
+
         const col = mapping[a.id];
         if (!col) continue;
         const raw = row[col];
