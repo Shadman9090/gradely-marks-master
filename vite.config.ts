@@ -6,10 +6,28 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Public (publishable) backend config. These are safe to ship to the browser and
+// act as a fallback when the build environment does not inject VITE_* vars,
+// which otherwise makes the deployed app fail to boot.
+const SUPABASE_URL =
+  process.env["VITE_SUPABASE_URL"] ||
+  process.env["SUPABASE_URL"] ||
+  "https://uvsrvmykxpnnxxkhwacu.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+  process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+  "sb_publishable_YXg5LwnX47hb8MJxgKJc-w_xVE9nJMj";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    define: {
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(SUPABASE_URL),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(SUPABASE_PUBLISHABLE_KEY),
+    },
   },
 });
