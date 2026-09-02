@@ -168,16 +168,11 @@ export function MarksImportDialog({
         });
       }
     });
-    return { marks, problems, newStudents };
+    return { marks, problems, newStudents, infoUpdates, matched, skipped };
   }
 
   async function confirm() {
     const first = buildMarks();
-    if (first.problems.length > 0) {
-      setErrors(first.problems);
-      toast.error("Please fix the problems listed before importing.");
-      return;
-    }
     setBusy(true);
 
     let created: Student[] = [];
@@ -190,6 +185,7 @@ export function MarksImportDialog({
             course_id: course.id,
             roll: s.roll,
             name: s.name,
+            reg_no: s.reg_no,
             position: base + i,
           })),
         )
@@ -202,37 +198,53 @@ export function MarksImportDialog({
       created = (data ?? []) as Student[];
     }
 
-    const { marks, problems } = buildMarks(created);
+    const { marks, problems, infoUpdates, matched, skipped } = buildMarks(created);
     setErrors(problems);
-    if (problems.length > 0) {
-      setBusy(false);
-      queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
-      toast.error("Please fix the problems listed before importing.");
-      return;
+
+    let namesUpdated = 0;
+    let regsUpdated = 0;
+    for (const u of infoUpdates) {
+      const { error } = await supabase.from("students").update(u.patch).eq("id", u.id);
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
+      if (u.patch['name']) namesUpdated++;
+      if (u.patch['reg_no']) regsUpdated++;
     }
-    if (marks.length === 0) {
-      setBusy(false);
-      queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
-      toast.error("No marks were found to import. Check your column mapping.");
-      return;
+
+    if (marks.length > 0) {
+      const { error } = await supabase
+        .from("marks")
+        .upsert(marks, { onConflict: "assessment_id,student_id" });
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
     }
-    const { error } = await supabase
-      .from("marks")
-      .upsert(marks, { onConflict: "assessment_id,student_id" });
     setBusy(false);
-    if (error) {
-      toast.error(friendlyError(error));
-      return;
-    }
     queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
     queryClient.invalidateQueries({ queryKey: courseKeys.marks(course.id) });
-    toast.success(
-      created.length
-        ? `${marks.length} marks imported, ${created.length} students enrolled.`
-        : `${marks.length} marks imported.`,
-    );
+
+    if (marks.length === 0 && created.length === 0 && infoUpdates.length === 0) {
+      toast.error("Nothing was imported. Check your column mapping.");
+      return;
+    }
+    toast.success("Import completed successfully", {
+      description: [
+        `New students added: ${created.length}`,
+        `Existing students matched: ${matched}`,
+        `Names imported: ${namesUpdated}`,
+        `Registration numbers imported: ${regsUpdated}`,
+        `Marks imported/updated: ${marks.length}`,
+        `Rows skipped (invalid roll): ${skipped}`,
+      ].join(" · "),
+    });
     reset();
     onOpenChange(false);
+
   }
 
   return (
