@@ -42,6 +42,7 @@ export function MarksImportDialog({
   const [rows, setRows] = useState<SheetRow[]>([]);
   const [rollCol, setRollCol] = useState("");
   const [nameCol, setNameCol] = useState("");
+  const [regCol, setRegCol] = useState("");
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -51,6 +52,7 @@ export function MarksImportDialog({
     setRows([]);
     setRollCol("");
     setNameCol("");
+    setRegCol("");
     setMapping({});
     setErrors([]);
   }
@@ -64,6 +66,7 @@ export function MarksImportDialog({
       setRows(r);
       setRollCol(guessColumn(h, ["roll", "roll no", "roll number", "student id"]));
       setNameCol(guessColumn(h, ["name", "student name", "full name"]));
+      setRegCol(guessColumn(h, ["registration", "reg no", "reg"]));
       const next: Record<string, string> = {};
       for (const a of assessments) next[a.id] = guessColumn(h, [a.name]);
       setMapping(next);
@@ -73,40 +76,54 @@ export function MarksImportDialog({
     }
   }
 
+
   function buildMarks(extra: Student[] = []): {
     marks: Mark[];
     problems: string[];
-    newStudents: { roll: string; name: string }[];
+    newStudents: { roll: string; name: string; reg_no: string }[];
+    infoUpdates: { id: string; patch: Record<string, string> }[];
+    matched: number;
+    skipped: number;
   } {
     const byRoll = new Map(
       [...students, ...extra].map((s) => [String(s.roll).trim(), s]),
     );
     const marks: Mark[] = [];
     const problems: string[] = [];
-    const newStudents: { roll: string; name: string }[] = [];
+    const newStudents: { roll: string; name: string; reg_no: string }[] = [];
+    const infoUpdates: { id: string; patch: Record<string, string> }[] = [];
     const seen = new Set<string>();
+    let matched = 0;
+    let skipped = 0;
 
     rows.forEach((row, i) => {
       const roll = String(row[rollCol] ?? "").trim();
+      const name = nameCol ? String(row[nameCol] ?? "").trim() : "";
+      const reg_no = regCol ? String(row[regCol] ?? "").trim() : "";
       if (!roll) {
-        problems.push(`Row ${i + 2}: missing roll number.`);
+        skipped++;
+        problems.push(`Row ${i + 2}: missing roll number — skipped.`);
         return;
       }
       if (seen.has(roll)) {
-        problems.push(`Row ${i + 2}: duplicate roll number ${roll}.`);
+        skipped++;
+        problems.push(`Row ${i + 2}: duplicate roll number ${roll} inside the file — skipped.`);
         return;
       }
       seen.add(roll);
       const student = byRoll.get(roll);
       if (!student) {
-        newStudents.push({
-          roll,
-          name: nameCol ? String(row[nameCol] ?? "").trim() : "",
-        });
+        newStudents.push({ roll, name, reg_no });
         return;
       }
+      matched++;
+      const patch: Record<string, string> = {};
+      if (name && !String(student.name ?? "").trim()) patch['name'] = name;
+      if (reg_no && !String(student.reg_no ?? "").trim()) patch['reg_no'] = reg_no;
+      if (Object.keys(patch).length > 0) infoUpdates.push({ id: student.id, patch });
       for (const a of assessments) {
         const col = mapping[a.id];
+
         if (!col) continue;
         const raw = row[col];
         if (raw === null || raw === undefined || String(raw).trim() === "") continue;
@@ -151,16 +168,11 @@ export function MarksImportDialog({
         });
       }
     });
-    return { marks, problems, newStudents };
+    return { marks, problems, newStudents, infoUpdates, matched, skipped };
   }
 
   async function confirm() {
     const first = buildMarks();
-    if (first.problems.length > 0) {
-      setErrors(first.problems);
-      toast.error("Please fix the problems listed before importing.");
-      return;
-    }
     setBusy(true);
 
     let created: Student[] = [];
@@ -173,6 +185,7 @@ export function MarksImportDialog({
             course_id: course.id,
             roll: s.roll,
             name: s.name,
+            reg_no: s.reg_no,
             position: base + i,
           })),
         )
@@ -185,37 +198,53 @@ export function MarksImportDialog({
       created = (data ?? []) as Student[];
     }
 
-    const { marks, problems } = buildMarks(created);
+    const { marks, problems, infoUpdates, matched, skipped } = buildMarks(created);
     setErrors(problems);
-    if (problems.length > 0) {
-      setBusy(false);
-      queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
-      toast.error("Please fix the problems listed before importing.");
-      return;
+
+    let namesUpdated = 0;
+    let regsUpdated = 0;
+    for (const u of infoUpdates) {
+      const { error } = await supabase.from("students").update(u.patch).eq("id", u.id);
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
+      if (u.patch['name']) namesUpdated++;
+      if (u.patch['reg_no']) regsUpdated++;
     }
-    if (marks.length === 0) {
-      setBusy(false);
-      queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
-      toast.error("No marks were found to import. Check your column mapping.");
-      return;
+
+    if (marks.length > 0) {
+      const { error } = await supabase
+        .from("marks")
+        .upsert(marks, { onConflict: "assessment_id,student_id" });
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
     }
-    const { error } = await supabase
-      .from("marks")
-      .upsert(marks, { onConflict: "assessment_id,student_id" });
     setBusy(false);
-    if (error) {
-      toast.error(friendlyError(error));
-      return;
-    }
     queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
     queryClient.invalidateQueries({ queryKey: courseKeys.marks(course.id) });
-    toast.success(
-      created.length
-        ? `${marks.length} marks imported, ${created.length} students enrolled.`
-        : `${marks.length} marks imported.`,
-    );
+
+    if (marks.length === 0 && created.length === 0 && infoUpdates.length === 0) {
+      toast.error("Nothing was imported. Check your column mapping.");
+      return;
+    }
+    toast.success("Import completed successfully", {
+      description: [
+        `New students added: ${created.length}`,
+        `Existing students matched: ${matched}`,
+        `Names imported: ${namesUpdated}`,
+        `Registration numbers imported: ${regsUpdated}`,
+        `Marks imported/updated: ${marks.length}`,
+        `Rows skipped (invalid roll): ${skipped}`,
+      ].join(" · "),
+    });
     reset();
     onOpenChange(false);
+
   }
 
   return (

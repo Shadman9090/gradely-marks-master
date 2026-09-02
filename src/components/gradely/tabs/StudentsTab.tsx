@@ -340,8 +340,8 @@ function StudentImportDialog({
 
   async function confirm() {
     const problems: string[] = [];
-    const seen = new Set(existing.map((s) => s.roll.trim()));
-    const payload: {
+    const byRoll = new Map(existing.map((s) => [s.roll.trim(), s]));
+    const inserts: {
       course_id: string;
       roll: string;
       name: string;
@@ -349,40 +349,91 @@ function StudentImportDialog({
       section: string;
       position: number;
     }[] = [];
+    const updates: { id: string; patch: Record<string, string> }[] = [];
+    const seenRows = new Set<string>();
+    let matched = 0;
+    let namesUpdated = 0;
+    let regsUpdated = 0;
+    let skipped = 0;
+
+    const cell = (row: SheetRow, col: string) =>
+      col ? String(row[col] ?? "").trim() : "";
+
     rows.forEach((row, i) => {
-      const roll = String(row[map.roll] ?? "").trim();
+      const roll = cell(row, map.roll);
       if (!roll) {
-        problems.push(`Row ${i + 2}: missing roll number.`);
+        skipped++;
+        problems.push(`Row ${i + 2}: missing roll number — skipped.`);
         return;
       }
-      if (seen.has(roll)) {
-        problems.push(`Row ${i + 2}: roll ${roll} already exists and was skipped.`);
+      if (seenRows.has(roll)) {
+        skipped++;
+        problems.push(`Row ${i + 2}: duplicate roll ${roll} inside the file — skipped.`);
         return;
       }
-      seen.add(roll);
-      payload.push({
+      seenRows.add(roll);
+      const name = cell(row, map.name);
+      const reg_no = cell(row, map.reg_no);
+      const section = cell(row, map.section);
+      const found = byRoll.get(roll);
+      if (found) {
+        matched++;
+        const patch: Record<string, string> = {};
+        if (name && !found.name.trim()) {
+          patch['name'] = name;
+          namesUpdated++;
+        }
+        if (reg_no && !found.reg_no?.trim()) {
+          patch['reg_no'] = reg_no;
+          regsUpdated++;
+        }
+        if (section && !found.section?.trim()) patch['section'] = section;
+        if (Object.keys(patch).length > 0) updates.push({ id: found.id, patch });
+        return;
+      }
+      inserts.push({
         course_id: course.id,
         roll,
-        name: String(row[map.name] ?? "").trim(),
-        reg_no: String(row[map.reg_no] ?? "").trim(),
-        section: String(row[map.section] ?? "").trim(),
-        position: existing.length + payload.length,
+        name,
+        reg_no,
+        section,
+        position: existing.length + inserts.length,
       });
     });
+
     setErrors(problems);
-    if (payload.length === 0) {
-      toast.error("No new students found to import.");
+    if (inserts.length === 0 && updates.length === 0) {
+      toast.error("Nothing new to import — all rows already match existing records.");
       return;
     }
     setBusy(true);
-    const { error } = await supabase.from("students").insert(payload);
-    setBusy(false);
-    if (error) {
-      toast.error(friendlyError(error));
-      return;
+    if (inserts.length > 0) {
+      const { error } = await supabase.from("students").insert(inserts);
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
     }
+    for (const u of updates) {
+      const { error } = await supabase.from("students").update(u.patch).eq("id", u.id);
+      if (error) {
+        setBusy(false);
+        toast.error(friendlyError(error));
+        return;
+      }
+    }
+    setBusy(false);
     queryClient.invalidateQueries({ queryKey: courseKeys.students(course.id) });
-    toast.success(`${payload.length} students imported.`);
+    toast.success("Import completed successfully", {
+      description: [
+        `New students added: ${inserts.length}`,
+        `Existing students matched: ${matched}`,
+        `Names imported: ${namesUpdated}`,
+        `Registration numbers imported: ${regsUpdated}`,
+        `Rows skipped (invalid roll): ${skipped}`,
+      ].join(" · "),
+    });
     onOpenChange(false);
   }
 
@@ -392,9 +443,11 @@ function StudentImportDialog({
         <DialogHeader>
           <DialogTitle>Import student list</DialogTitle>
           <DialogDescription>
-            Upload your class list and match the columns. Existing roll numbers are skipped.
+            Upload your class list and match the columns. Roll numbers already in the course are
+            merged — only missing fields are filled in, and empty cells never erase existing data.
           </DialogDescription>
         </DialogHeader>
+
         <div className="space-y-4">
           <Input
             type="file"
