@@ -121,8 +121,9 @@ export function MarksImportDialog({
       if (name && !String(student.name ?? "").trim()) patch['name'] = name;
       if (reg_no && !String(student.reg_no ?? "").trim()) patch['reg_no'] = reg_no;
       if (Object.keys(patch).length > 0) infoUpdates.push({ id: student.id, patch });
-
+      for (const a of assessments) {
         const col = mapping[a.id];
+
         if (!col) continue;
         const raw = row[col];
         if (raw === null || raw === undefined || String(raw).trim() === "") continue;
