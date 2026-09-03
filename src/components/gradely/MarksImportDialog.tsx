@@ -300,9 +300,24 @@ export function MarksImportDialog({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Roll numbers not yet in this course will be enrolled automatically.
+                  Roll numbers not yet in this course will be enrolled automatically. Existing
+                  students keep their details — only empty fields are filled in.
                 </p>
               </div>
+
+              <div className="space-y-1.5">
+                <Label>Registration number column (optional)</Label>
+                <Select value={regCol || "__none"} onValueChange={(v) => setRegCol(v === "__none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">No registration column</SelectItem>
+                    {headers.map((h) => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
 
               <div className="space-y-2">
                 <Label>Match assessments to columns</Label>
