@@ -116,8 +116,6 @@ export function SummaryTab({ course, rows }: { course: Course; rows: StudentSumm
                 <th className="px-3 py-2 text-right font-medium">Lab<span className="block text-[11px] font-normal text-muted-foreground">/{s.labMax}</span></th>
               )}
               <th className="px-3 py-2 text-right font-medium">Total<span className="block text-[11px] font-normal text-muted-foreground">/{s.totalMax}</span></th>
-              <th className="px-3 py-2 text-right font-medium">%</th>
-              <th className="px-3 py-2 text-center font-medium">Grade</th>
             </tr>
           </thead>
           <tbody>
@@ -141,8 +139,6 @@ export function SummaryTab({ course, rows }: { course: Course; rows: StudentSumm
                 )}
                 {s.useLab && <td className="numeric px-3 py-1.5 text-right">{fmt(r.lab.converted, s)}</td>}
                 <td className="numeric px-3 py-1.5 text-right font-semibold">{fmt(r.total, s)}</td>
-                <td className="numeric px-3 py-1.5 text-right">{r.percentage.toFixed(1)}</td>
-                <td className="px-3 py-1.5 text-center font-medium">{r.grade}</td>
               </tr>
             ))}
           </tbody>
