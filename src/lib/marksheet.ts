@@ -51,8 +51,13 @@ export function buildMarksheet(
     return { cells };
   });
 
-  const dept = course.department || "";
-  const faculty = /^faculty/i.test(dept) ? dept : dept ? `Faculty of ${dept}` : "";
+  const rawDept = (course.department || "").trim();
+  const strippedDept = rawDept.replace(/^(Department of|Faculty of)\s*/i, "");
+  const faculty = /^faculty/i.test(rawDept)
+    ? rawDept
+    : strippedDept
+      ? `Faculty of ${strippedDept}`
+      : "";
   const examParts = [course.level, course.semester, "Examination"].filter(Boolean).join(" ");
   const year = course.academic_year ? `, ${course.academic_year}` : "";
   const session = course.session ? ` (Session: ${course.session})` : "";
@@ -66,7 +71,7 @@ export function buildMarksheet(
     title1: "Heaven's Light is Our Guide",
     university: (course.university || "University").toUpperCase(),
     faculty,
-    department: dept ? `Department of ${dept.replace(/^Faculty of\s*/i, "")}` : "",
+    department: strippedDept ? `Department of ${strippedDept}` : "",
     examLine: `${examParts}${year}${session}`,
     subjectLine: `${compNames.join(" + ")} Marks on ${course.code}${
       course.title ? ` ( ${course.title} )` : ""
