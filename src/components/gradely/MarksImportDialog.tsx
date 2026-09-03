@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type StudentPatch = { name?: string; reg_no?: string; section?: string };
+
 export function MarksImportDialog({
   open,
   onOpenChange,
@@ -81,7 +83,7 @@ export function MarksImportDialog({
     marks: Mark[];
     problems: string[];
     newStudents: { roll: string; name: string; reg_no: string }[];
-    infoUpdates: { id: string; patch: Record<string, string> }[];
+    infoUpdates: { id: string; patch: StudentPatch }[];
     matched: number;
     skipped: number;
   } {
@@ -91,7 +93,7 @@ export function MarksImportDialog({
     const marks: Mark[] = [];
     const problems: string[] = [];
     const newStudents: { roll: string; name: string; reg_no: string }[] = [];
-    const infoUpdates: { id: string; patch: Record<string, string> }[] = [];
+    const infoUpdates: { id: string; patch: StudentPatch }[] = [];
     const seen = new Set<string>();
     let matched = 0;
     let skipped = 0;
@@ -117,9 +119,9 @@ export function MarksImportDialog({
         return;
       }
       matched++;
-      const patch: Record<string, string> = {};
-      if (name && !String(student.name ?? "").trim()) patch['name'] = name;
-      if (reg_no && !String(student.reg_no ?? "").trim()) patch['reg_no'] = reg_no;
+      const patch: StudentPatch = {};
+      if (name && !String(student.name ?? "").trim()) patch.name = name;
+      if (reg_no && !String(student.reg_no ?? "").trim()) patch.reg_no = reg_no;
       if (Object.keys(patch).length > 0) infoUpdates.push({ id: student.id, patch });
       for (const a of assessments) {
         const col = mapping[a.id];
@@ -210,8 +212,8 @@ export function MarksImportDialog({
         toast.error(friendlyError(error));
         return;
       }
-      if (u.patch['name']) namesUpdated++;
-      if (u.patch['reg_no']) regsUpdated++;
+      if (u.patch.name) namesUpdated++;
+      if (u.patch.reg_no) regsUpdated++;
     }
 
     if (marks.length > 0) {
@@ -300,9 +302,24 @@ export function MarksImportDialog({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Roll numbers not yet in this course will be enrolled automatically.
+                  Roll numbers not yet in this course will be enrolled automatically. Existing
+                  students keep their details — only empty fields are filled in.
                 </p>
               </div>
+
+              <div className="space-y-1.5">
+                <Label>Registration number column (optional)</Label>
+                <Select value={regCol || "__none"} onValueChange={(v) => setRegCol(v === "__none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">No registration column</SelectItem>
+                    {headers.map((h) => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
 
               <div className="space-y-2">
                 <Label>Match assessments to columns</Label>
