@@ -31,6 +31,8 @@ type Form = { id?: string; roll: string; name: string; reg_no: string; section: 
 
 const blank: Form = { roll: "", name: "", reg_no: "", section: "" };
 
+type StudentPatch = { name?: string; reg_no?: string; section?: string };
+
 export function StudentsTab({ course, students }: { course: Course; students: Student[] }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -349,7 +351,7 @@ function StudentImportDialog({
       section: string;
       position: number;
     }[] = [];
-    const updates: { id: string; patch: Record<string, string> }[] = [];
+    const updates: { id: string; patch: StudentPatch }[] = [];
     const seenRows = new Set<string>();
     let matched = 0;
     let namesUpdated = 0;
@@ -378,16 +380,16 @@ function StudentImportDialog({
       const found = byRoll.get(roll);
       if (found) {
         matched++;
-        const patch: Record<string, string> = {};
+        const patch: StudentPatch = {};
         if (name && !found.name.trim()) {
-          patch['name'] = name;
+          patch.name = name;
           namesUpdated++;
         }
         if (reg_no && !found.reg_no?.trim()) {
-          patch['reg_no'] = reg_no;
+          patch.reg_no = reg_no;
           regsUpdated++;
         }
-        if (section && !found.section?.trim()) patch['section'] = section;
+        if (section && !found.section?.trim()) patch.section = section;
         if (Object.keys(patch).length > 0) updates.push({ id: found.id, patch });
         return;
       }

@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type StudentPatch = { name?: string; reg_no?: string; section?: string };
+
 export function MarksImportDialog({
   open,
   onOpenChange,
@@ -81,7 +83,7 @@ export function MarksImportDialog({
     marks: Mark[];
     problems: string[];
     newStudents: { roll: string; name: string; reg_no: string }[];
-    infoUpdates: { id: string; patch: Record<string, string> }[];
+    infoUpdates: { id: string; patch: StudentPatch }[];
     matched: number;
     skipped: number;
   } {
@@ -91,7 +93,7 @@ export function MarksImportDialog({
     const marks: Mark[] = [];
     const problems: string[] = [];
     const newStudents: { roll: string; name: string; reg_no: string }[] = [];
-    const infoUpdates: { id: string; patch: Record<string, string> }[] = [];
+    const infoUpdates: { id: string; patch: StudentPatch }[] = [];
     const seen = new Set<string>();
     let matched = 0;
     let skipped = 0;
@@ -117,9 +119,9 @@ export function MarksImportDialog({
         return;
       }
       matched++;
-      const patch: Record<string, string> = {};
-      if (name && !String(student.name ?? "").trim()) patch['name'] = name;
-      if (reg_no && !String(student.reg_no ?? "").trim()) patch['reg_no'] = reg_no;
+      const patch: StudentPatch = {};
+      if (name && !String(student.name ?? "").trim()) patch.name = name;
+      if (reg_no && !String(student.reg_no ?? "").trim()) patch.reg_no = reg_no;
       if (Object.keys(patch).length > 0) infoUpdates.push({ id: student.id, patch });
       for (const a of assessments) {
         const col = mapping[a.id];
@@ -210,8 +212,8 @@ export function MarksImportDialog({
         toast.error(friendlyError(error));
         return;
       }
-      if (u.patch['name']) namesUpdated++;
-      if (u.patch['reg_no']) regsUpdated++;
+      if (u.patch.name) namesUpdated++;
+      if (u.patch.reg_no) regsUpdated++;
     }
 
     if (marks.length > 0) {
