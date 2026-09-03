@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Upload, Download, Pencil, UserMinus, UserCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { courseKeys, friendlyError } from "@/lib/api";
-import { exportSheet, guessColumn, readWorkbook, type SheetRow } from "@/lib/excel";
+import { exportSheet, guessColumn, isSummaryRoll, readWorkbook, type SheetRow } from "@/lib/excel";
 import type { Course, Student } from "@/lib/gradely-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -366,6 +366,10 @@ function StudentImportDialog({
       if (!roll) {
         skipped++;
         problems.push(`Row ${i + 2}: missing roll number — skipped.`);
+        return;
+      }
+      if (isSummaryRoll(roll)) {
+        // Statistics/footer row from the spreadsheet — never a student.
         return;
       }
       if (seenRows.has(roll)) {

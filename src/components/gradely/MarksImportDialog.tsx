@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { courseKeys, friendlyError } from "@/lib/api";
-import { guessColumn, readWorkbook, type SheetRow } from "@/lib/excel";
+import { guessColumn, isSummaryRoll, readWorkbook, type SheetRow } from "@/lib/excel";
 import type { Assessment, Course, Mark, Student } from "@/lib/gradely-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +105,10 @@ export function MarksImportDialog({
       if (!roll) {
         skipped++;
         problems.push(`Row ${i + 2}: missing roll number — skipped.`);
+        return;
+      }
+      if (isSummaryRoll(roll)) {
+        // Statistics/footer row from the spreadsheet — never a student.
         return;
       }
       if (seen.has(roll)) {

@@ -52,6 +52,17 @@ export function exportSheet(
   XLSX.writeFile(wb, filename);
 }
 
+/**
+ * Detects spreadsheet footer/statistics rows (e.g. "Absent Students",
+ * "Average CT Mark", "Summary") that must never be treated as a student roll.
+ */
+const SUMMARY_ROLL =
+  /^(absent|present|average|avg|highest|high|lowest|low|maximum|max(?!\d)|minimum|min(?!\d)|total|summary|mean|median|count|no\.?\s*of|number\s*of|passed|failed|pass\b|fail\b|gpa|grade|class\s*of|date|signature|remarks?)/i;
+
+export function isSummaryRoll(roll: string): boolean {
+  return SUMMARY_ROLL.test(roll.trim());
+}
+
 export function guessColumn(headers: string[], candidates: string[]): string {
   const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
   for (const c of candidates) {
