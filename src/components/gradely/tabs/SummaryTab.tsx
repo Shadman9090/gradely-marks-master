@@ -139,8 +139,6 @@ export function SummaryTab({ course, rows }: { course: Course; rows: StudentSumm
                 )}
                 {s.useLab && <td className="numeric px-3 py-1.5 text-right">{fmt(r.lab.converted, s)}</td>}
                 <td className="numeric px-3 py-1.5 text-right font-semibold">{fmt(r.total, s)}</td>
-                <td className="numeric px-3 py-1.5 text-right">{r.percentage.toFixed(1)}</td>
-                <td className="px-3 py-1.5 text-center font-medium">{r.grade}</td>
               </tr>
             ))}
           </tbody>
