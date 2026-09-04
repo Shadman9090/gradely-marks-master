@@ -134,7 +134,7 @@ export function MarksheetTab({
         >
           <SheetHeader model={model} />
           <SheetTable model={model} />
-          <div className="mt-16 flex justify-between text-[11px]">
+          <div className="avoid-break mt-8 flex justify-between text-[11px]">
             <div className="text-center">
               <div className="w-56 border-t border-black pt-1 font-semibold">
                 Signature of Course Teacher
