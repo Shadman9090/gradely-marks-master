@@ -42,20 +42,46 @@ export function MarksheetTab({
         backgroundColor: "#ffffff",
         logging: false,
       });
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pageHeight = 297;
+
+      const pageW = 210;
+      const pageH = 297;
+      const margin = 8;
+      const availW = pageW - margin * 2;
+      const availH = pageH - margin * 2;
+
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      const naturalH = (canvas.height * availW) / canvas.width;
+
+      if (naturalH <= availH) {
+        // Fits comfortably — single page.
+        pdf.addImage(imgData, "JPEG", margin, margin, availW, naturalH);
+      } else if (naturalH <= availH * 1.35) {
+        // Slight overflow (typical ~60 students + signatures): scale down to one page
+        // so the signature block never lands alone on page two.
+        const h = availH;
+        const w = (canvas.width * h) / canvas.height;
+        pdf.addImage(imgData, "JPEG", (pageW - w) / 2, margin, w, h);
+      } else {
+        // Genuinely multi-page: slice the canvas so no page is mostly empty.
+        const pxPerPage = Math.floor((availH * canvas.width) / availW);
+        const pages = Math.ceil(canvas.height / pxPerPage);
+        for (let p = 0; p < pages; p++) {
+          const sliceY = p * pxPerPage;
+          const sliceH = Math.min(pxPerPage, canvas.height - sliceY);
+          const slice = document.createElement("canvas");
+          slice.width = canvas.width;
+          slice.height = sliceH;
+          const ctx = slice.getContext("2d");
+          if (!ctx) break;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, slice.width, slice.height);
+          ctx.drawImage(canvas, 0, sliceY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+          const sliceData = slice.toDataURL("image/jpeg", 0.95);
+          const h = (sliceH * availW) / canvas.width;
+          if (p > 0) pdf.addPage();
+          pdf.addImage(sliceData, "JPEG", margin, margin, availW, h);
+        }
       }
       pdf.save(`${course.code}-marksheet.pdf`);
     } catch {
@@ -64,6 +90,7 @@ export function MarksheetTab({
       setExporting(null);
     }
   }
+
 
   async function exportExcel() {
     setExporting("xlsx");
@@ -103,11 +130,11 @@ export function MarksheetTab({
       <div className="soft-in overflow-x-auto">
         <div
           ref={sheetRef}
-          className="print-sheet mx-auto bg-white p-8 font-serif text-[11px] text-black shadow-card"
+          className="print-sheet mx-auto bg-white p-6 font-serif text-[11px] text-black shadow-card"
         >
           <SheetHeader model={model} />
           <SheetTable model={model} />
-          <div className="mt-16 flex justify-between text-[11px]">
+          <div className="avoid-break mt-8 flex justify-between text-[11px]">
             <div className="text-center">
               <div className="w-56 border-t border-black pt-1 font-semibold">
                 Signature of Course Teacher
