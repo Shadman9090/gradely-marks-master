@@ -130,7 +130,7 @@ export function MarksheetTab({
       <div className="soft-in overflow-x-auto">
         <div
           ref={sheetRef}
-          className="print-sheet mx-auto bg-white p-8 font-serif text-[11px] text-black shadow-card"
+          className="print-sheet mx-auto bg-white p-6 font-serif text-[11px] text-black shadow-card"
         >
           <SheetHeader model={model} />
           <SheetTable model={model} />
