@@ -65,6 +65,7 @@ export function MarksGrid({
     () => assessments.filter((a) => a.category === category).sort((a, b) => a.position - b.position),
     [assessments, category],
   );
+  const gridId = `marks-${category}`;
 
   const [drafts, setDrafts] = useState<Map<string, Draft>>(new Map());
   const [saveState, setSaveState] = useState<SaveState>("idle");
