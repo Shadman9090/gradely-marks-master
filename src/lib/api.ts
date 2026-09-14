@@ -7,6 +7,7 @@ import type {
   Student,
 } from "./gradely-types";
 import { withDefaults } from "./gradely-types";
+import { sortStudents } from "./student-order";
 
 export function friendlyError(error: unknown): string {
   const msg = (error as { message?: string })?.message ?? String(error);
@@ -43,7 +44,8 @@ export async function listStudents(courseId: string): Promise<Student[]> {
     .eq("course_id", courseId)
     .order("roll");
   if (error) throw error;
-  return (data ?? []) as Student[];
+  // Single ordering rule for the whole app: primary series first, others after.
+  return sortStudents((data ?? []) as Student[]);
 }
 
 /** Students that count towards marks, calculations and the marksheet. */
