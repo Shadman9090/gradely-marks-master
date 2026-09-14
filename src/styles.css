@@ -398,4 +398,44 @@
   .sheet tfoot {
     display: table-footer-group;
   }
+
+  /* Marksheet must fit fully inside the printable area — no side clipping. */
+  html,
+  body {
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  main,
+  .page-enter,
+  .soft-in {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-width: none !important;
+  }
+
+  .print-sheet-wrap {
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    overflow: visible !important;
+  }
+
+  .print-sheet table {
+    width: 100% !important;
+    table-layout: fixed;
+  }
 }
