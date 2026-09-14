@@ -5,6 +5,7 @@ import { Plus, Trash2, Download, Upload, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError, courseKeys } from "@/lib/api";
 import { markKey, fmt } from "@/lib/calc";
+import { gridCell } from "@/lib/grid-nav";
 import type {
   Assessment,
   AssessmentCategory,
@@ -64,6 +65,7 @@ export function MarksGrid({
     () => assessments.filter((a) => a.category === category).sort((a, b) => a.position - b.position),
     [assessments, category],
   );
+  const gridId = `marks-${category}`;
 
   const [drafts, setDrafts] = useState<Map<string, Draft>>(new Map());
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -305,7 +307,7 @@ export function MarksGrid({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => {
+                {filtered.map((s, rowIndex) => {
                   let total = 0;
                   for (const a of items) {
                     const d = drafts.get(markKey(a.id, s.id));
@@ -315,7 +317,7 @@ export function MarksGrid({
                     <tr key={s.id} className="border-t transition-colors hover:bg-muted/40">
                       <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-mono text-xs">{s.roll}</td>
                       <td className="truncate px-3 py-1.5">{s.name || "—"}</td>
-                      {items.map((a) => {
+                      {items.map((a, colIndex) => {
                         const d = drafts.get(markKey(a.id, s.id));
                         const display =
                           d?.status === "absent" ? "A" : d?.status === "na" ? "NA" : (d?.value ?? "");
@@ -329,9 +331,7 @@ export function MarksGrid({
                                 if (e.target.value.trim().toUpperCase() === display) return;
                                 onCellChange(a, s, e.target.value);
                               }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                              }}
+                              {...gridCell(gridId, rowIndex, colIndex)}
                             />
                           </td>
                         );

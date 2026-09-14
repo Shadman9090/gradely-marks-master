@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { courseKeys, friendlyError } from "@/lib/api";
 import { attendanceMarks, attendancePercent, fmt } from "@/lib/calc";
+import { gridCell } from "@/lib/grid-nav";
 import type { Attendance, Course, Student } from "@/lib/gradely-types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -154,7 +155,7 @@ export function AttendanceTab({
             </tr>
           </thead>
           <tbody>
-            {students.map((st) => {
+            {students.map((st, rowIndex) => {
               const r = rows.get(st.id) ?? { held: "", attended: "" };
               const record: Attendance = {
                 course_id: course.id,
@@ -174,6 +175,7 @@ export function AttendanceTab({
                       defaultValue={r.held}
                       key={`h-${st.id}-${r.held}`}
                       onBlur={(e) => e.target.value !== r.held && update(st.id, "held", e.target.value.trim())}
+                      {...gridCell("attendance", rowIndex, 0)}
                     />
                   </td>
                   <td className="px-2 py-1 text-center">
@@ -184,6 +186,7 @@ export function AttendanceTab({
                       onBlur={(e) =>
                         e.target.value !== r.attended && update(st.id, "attended", e.target.value.trim())
                       }
+                      {...gridCell("attendance", rowIndex, 1)}
                     />
                   </td>
                   <td className="numeric px-3 py-1.5 text-right">

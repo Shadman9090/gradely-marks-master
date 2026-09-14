@@ -125,9 +125,9 @@ export function MarksheetTab({
         </div>
       </div>
 
-      <style>{`@page { size: A4 portrait; margin: 12mm; }`}</style>
+      <style>{`@page { size: A4 portrait; margin: 10mm; }`}</style>
 
-      <div className="soft-in overflow-x-auto">
+      <div className="print-sheet-wrap soft-in overflow-x-auto">
         <div
           ref={sheetRef}
           className="print-sheet mx-auto bg-white p-6 font-serif text-[11px] text-black shadow-card"
